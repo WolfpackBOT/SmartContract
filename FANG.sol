@@ -134,14 +134,13 @@ contract FangToken is ERC20Interface, Ownable{
     uint private decimals;
     uint private decimalMult;
     uint private supply;
-    uint256 totalTokensBought;
-    uint256 totalTokensSold;
-    uint256 totalPayouts;
-    uint256 earningsPerShare;
-    uint256 initialPrice;
-    uint256 increment;
-    uint256 lowerCap;
-
+    uint256 private totalTokensBought;
+    uint256 private totalTokensSold;
+    uint256 private totalPayouts;
+    uint256 private earningsPerShare;
+    uint256 private initialPrice;
+    uint256 private increment;
+    uint256 private lowerCap;
     mapping(address => uint) public balances;
     mapping(address => int256) payouts;
     event Transfer(address indexed from, address indexed to, uint tokens);
@@ -184,6 +183,18 @@ contract FangToken is ERC20Interface, Ownable{
         balances[recipient] = balances[recipient].add(amount);
         emit Transfer(sender, recipient, amount);
         return true;
+    }
+
+    function setInitialPrice(uint256 newInitialPrice) public onlyOwner {
+        initialPrice = newInitialPrice;
+    }
+
+    function setIncrement(uint256 newIncrement) public onlyOwner {
+        increment = newIncrement;
+    }
+
+    function setLowerCap(uint256 newLowerCap) public onlyOwner {
+        lowerCap = newLowerCap;
     }
      
      function burn(uint256 amount) public onlyOwner {
