@@ -145,6 +145,13 @@ contract FangToken is ERC20Interface, Ownable{
     mapping(address => int256) payouts;
     event Transfer(address indexed from, address indexed to, uint tokens);
 
+    uint256 public totalDividends;
+    struct Account {
+      uint256 balance;
+      uint256 lastDividends;
+    }
+    mapping (address => Account) accounts;
+
     constructor(string memory _name, string memory _symbol, uint _decimals, uint _supply) public{
         // Set variables
         name = _name;
@@ -179,6 +186,10 @@ contract FangToken is ERC20Interface, Ownable{
         require(sender != address(0));
         require(recipient != address(0));
 
+        uint256 fromOwing = dividendBalanceOf(sender);
+        uint256 toOwing = dividendBalanceOf(recipient);
+        require(fromOwing <= 0 && toOwing <= 0, "Token transfer disabled if sender or receiver have unclaimed dividends");
+
         balances[sender] = balances[sender].sub(amount);
         balances[recipient] = balances[recipient].add(amount);
         emit Transfer(sender, recipient, amount);
@@ -210,7 +221,10 @@ contract FangToken is ERC20Interface, Ownable{
     }
 
     function tokenPrice() public view returns (uint256){
-      uint256 price = initialPrice + (increment * totalTokensBought) - (increment * totalTokensSold);
+      // price = initialPrice + (increment * totalTokensBought) - (increment * totalTokensSold);
+      uint256 price = initialPrice.add(
+                        increment.mul(totalTokensBought).sub(increment.mul(totalTokensSold))
+                      );
       if(price < lowerCap)
       {
         price = lowerCap;
@@ -224,9 +238,60 @@ contract FangToken is ERC20Interface, Ownable{
       require(msg.value >= currentPrice, "Must send enough for at least 1 token");
 
       address sender = msg.sender;
+      uint fee = (uint)(msg.value / 10);
+      uint numEther = msg.value - fee;
+
+
+      
 
       // More logic needed
 
 
+    }
+
+    // This function is intended for website processing of orders.
+    // The amount value is the total dividends that needs to be distributed.
+    // b = Buyer
+    // r = Referrer
+    // q = Token quantity
+    // rd = Referrer dividend
+    // hd = Holder dividend
+    function processOrder(address b, address r, uint32 q, uint256 rd, uint256 hd) public payable returns (bool) {
+      // Verify inputs
+      // Sender is supposed to be the website
+      require(hd > 0, "Token holder dividend must be greater than zero");
+      require(b != r, "Buyer and referrer cannot be the same");
+      require(b != msg.sender, "Buyer address cannot be sender address");
+      require(r != msg.sender, "Referrer address cannot be sender address");
+
+      // Referrer dividend
+      if(r != address(0) && rd > 0) {
+        accounts[r].balance += rd;
+      }
+
+      // Added the holder dividend to the heap
+      totalDividends = totalDividends.add(hd);
+
+      // Fulfill token order
+      balances[msg.sender] = balances[msg.sender].sub(q);
+      balances[b] = balances[b].add(q);
+      emit Transfer(msg.sender, b, q);
+
+      return true;
+    }
+
+    // https://medium.com/@dejanradic.me/pay-dividend-in-ether-using-token-contract-104499de116a
+    function dividendBalanceOf(address account) public view returns (uint256) {
+      uint256 newDividends = totalDividends.sub(accounts[account].lastDividends);
+      uint256 product = accounts[account].balance.mul(newDividends);
+      return product.div(supply);
+    }
+
+    function claimDividend() public {
+      uint256 owing = dividendBalanceOf(msg.sender);
+      if (owing > 0) {
+        msg.sender.transfer(owing);
+        accounts[msg.sender].lastDividends = totalDividends;
+      }
     }
 }
