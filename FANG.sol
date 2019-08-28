@@ -9,7 +9,7 @@ contract ERC20Interface {
     function balanceOf(address tokenOwner) public view returns (uint balance);
     function transfer(address to, uint tokens) public returns (bool success);
 
-    
+
     event Transfer(address indexed from, address indexed to, uint tokens);
 }
 
@@ -41,7 +41,7 @@ contract Ownable {
   * @dev Throws if called by any account other than the owner.
   */
   modifier onlyOwner() {
-    require(isOwner());
+    require(isOwner(), "Only owner is allowed");
     _;
   }
 
@@ -58,7 +58,7 @@ contract Ownable {
   * It will not be possible to call the functions with the `onlyOwner`
   * modifier anymore.
   */
-  
+
   //function renounceOwnership() public onlyOwner {
   //  emit OwnershipTransferred(_owner, address(0));
   //  _owner = address(0);
@@ -77,7 +77,7 @@ contract Ownable {
   * @param newOwner The address to transfer ownership to.
   */
   function _transferOwnership(address payable newOwner) internal {
-    require(newOwner != address(0));
+    require(newOwner != address(0), "New order cannot be empty");
     emit OwnershipTransferred(_owner, newOwner);
     _owner = newOwner;
   }
@@ -173,7 +173,7 @@ contract FangToken is ERC20Interface, Ownable{
         supply = 3000000000;
         poolAccount = 0x0000000000000000000000000000000000000000;
         tokenAccount = 0x0000000000000000000000000000000000000000;
-        
+
         // $0.01 or 0.000053 ETH at the start time.
         currentPrice = 53000000000000;
 
@@ -186,7 +186,7 @@ contract FangToken is ERC20Interface, Ownable{
         // Give founder all supply
         balances[owner()] = supply;
     }
-    
+
     function getTotalDividends() public view returns (uint256){
         return totalDividends;
     }
@@ -194,7 +194,7 @@ contract FangToken is ERC20Interface, Ownable{
     function getPoolInfo() public view returns (uint status, uint256 owner, uint256 total, uint256 floor, uint256 ceiling, bool sellAllowed){
         return (pool.status, pool.owner, pool.total, pool.floor, pool.ceiling, pool.sellAllowed);
     }
-    
+
     function balanceOf(address tokenOwner) public view returns (uint balance){
          return balances[tokenOwner];
      }
@@ -202,11 +202,11 @@ contract FangToken is ERC20Interface, Ownable{
      function totalSupply() public view returns (uint){
         return supply;
     }
-     
+
     function transfer(address recipient, uint256 amount) public returns (bool) {
         address sender = msg.sender;
-        require(sender != address(0));
-        require(recipient != address(0));
+        require(sender != address(0), "Send cannot be empty");
+        require(recipient != address(0), "Recipient cannot be empty");
 
         uint256 fromOwing = dividendBalanceOf(sender);
         uint256 toOwing = dividendBalanceOf(recipient);
@@ -249,13 +249,13 @@ contract FangToken is ERC20Interface, Ownable{
         // TODO: Add pool sell logic
         pool.sellAllowed = true;
     }
-     
+
     function burn(uint256 amount) public onlyOwner {
         balances[owner()] = balances[owner()].sub(amount);
         supply = supply.sub(amount);
         emit Transfer(owner(), address(0), amount);
     }
-     
+
     function mint(uint256 amount) public onlyOwner {
         supply = supply.add(amount);
         balances[owner()] = balances[owner()].add(amount);
@@ -325,9 +325,9 @@ contract FangToken is ERC20Interface, Ownable{
     function sell(uint256 amount) public returns (bool) {
       require(pool.sellAllowed, "Sell is not yet allowed");
       require(amount > 0, "Must sell an amount greater than 0");
-      
+
       uint256 value = amount.mul(currentPrice);
-      
+
       require(value > .01 ether, "Transaction minimum not met");
       require(balanceOf(tokenAccount) > amount, "Not enough tokens available for sale.");
       require(address(this).balance >= value, "Unable to fund the sell transaction");
