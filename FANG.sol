@@ -14,7 +14,7 @@ contract ERC20Interface {
 }
 
 contract Ownable {
-  address private _owner;
+  address payable private _owner;
 
   event OwnershipTransferred(
     address indexed previousOwner,
@@ -33,7 +33,7 @@ contract Ownable {
   /**
   * @return the address of the owner.
   */
-  function owner() public view returns(address) {
+  function owner() public view returns(address payable) {
     return _owner;
   }
 
@@ -129,8 +129,22 @@ contract FangToken is ERC20Interface, Ownable{
 
     using SafeMath for uint;
 
-    string public name;
-    string public symbol;
+    struct Account {
+      uint256 balance;
+      uint256 lastDividends;
+    }
+
+    struct Pool {
+      uint status;
+      bool sellAllowed;
+      uint256 owner;
+      uint256 floor;
+      uint256 ceiling;
+      uint256 total;
+    }
+
+    string private name;
+    string private symbol;
     uint private decimals;
     uint private supply;
     uint256 private totalTokensBought;
@@ -140,26 +154,25 @@ contract FangToken is ERC20Interface, Ownable{
     uint256 public currentPrice;
     uint256 private increment;
     uint256 private lowerCap;
+    uint256 private totalDividends;
+    address payable private poolAccount;
+    address payable private tokenAccount;
+
     mapping(address => uint) public balances;
     mapping(address => int256) payouts;
-    event Transfer(address indexed from, address indexed to, uint tokens);
-
-    uint256 public totalDividends;
-    struct Account {
-      uint256 balance;
-      uint256 lastDividends;
-    }
     mapping (address => Account) accounts;
-    address payable pool;
-    address payable tokens;
+
+    Pool private pool;
+
+    event Transfer(address indexed from, address indexed to, uint tokens);
 
     constructor() public{
         name = "FANG-WPB";
         symbol = "FANG";
         decimals = 18;
         supply = 3000000000;
-        pool = "0x0000000000000000000000000000000000000000";
-        tokens = "0x0000000000000000000000000000000000000000";
+        poolAccount = 0x0000000000000000000000000000000000000000;
+        tokenAccount = 0x0000000000000000000000000000000000000000;
         
         // $0.01 or 0.000053 ETH at the start time.
         currentPrice = 53000000000000;
@@ -174,13 +187,21 @@ contract FangToken is ERC20Interface, Ownable{
         balances[owner()] = supply;
     }
     
-    function totalSupply() public view returns (uint){
-        return supply;
+    function getTotalDividends() public view returns (uint256){
+        return totalDividends;
+    }
+
+    function getPoolInfo() public view returns (uint status, uint256 owner, uint256 total, uint256 floor, uint256 ceiling, bool sellAllowed){
+        return (pool.status, pool.owner, pool.total, pool.floor, pool.ceiling, pool.sellAllowed);
     }
     
     function balanceOf(address tokenOwner) public view returns (uint balance){
          return balances[tokenOwner];
      }
+
+     function totalSupply() public view returns (uint){
+        return supply;
+    }
      
     function transfer(address recipient, uint256 amount) public returns (bool) {
         address sender = msg.sender;
@@ -205,12 +226,28 @@ contract FangToken is ERC20Interface, Ownable{
         lowerCap = newLowerCap;
     }
 
-    function setPool(address payable newPool) public onlyOwner {
-        pool = newPool;
+    function setPoolAccount(address payable newPoolAccount) public onlyOwner {
+        poolAccount = newPoolAccount;
     }
 
-    function setTokens(address payable newTokens) public onlyOwner {
-        tokens = newTokens;
+    function setTokenAccount(address payable newTokenAccount) public onlyOwner {
+        tokenAccount = newTokenAccount;
+    }
+
+    function updatePoolState(uint256 amountChange, bool added) internal {
+        if(added) {
+          pool.total = pool.total.add(amountChange);
+        }
+        else {
+          pool.total = pool.total.sub(amountChange);
+        }
+
+        // TODO: Need updated pool math to be ETH instead of USD
+        pool.owner = pool.total.div(5); // 20%
+        //pool.floor = ?
+
+        // TODO: Add pool sell logic
+        pool.sellAllowed = true;
     }
      
     function burn(uint256 amount) public onlyOwner {
@@ -219,7 +256,7 @@ contract FangToken is ERC20Interface, Ownable{
         emit Transfer(owner(), address(0), amount);
     }
      
-      function mint(uint256 amount) public onlyOwner {
+    function mint(uint256 amount) public onlyOwner {
         supply = supply.add(amount);
         balances[owner()] = balances[owner()].add(amount);
         emit Transfer(address(0), owner(), amount);
@@ -250,16 +287,19 @@ contract FangToken is ERC20Interface, Ownable{
 
       // Determine how many tokens can be bought
       uint256 amount = valueLeftForPurchase.div(currentPrice);
-      require(balances[tokens] > amount, "Not enough tokens available for sale.");
+      require(balances[tokenAccount] > amount, "Not enough tokens available for sale.");
       require(amount >= currentPrice, "Amount must be greater than or equal to the token price.");
 
       balances[msg.sender] = balances[msg.sender].add(amount);
-      balances[tokens] = balances[tokens].sub(amount);
+      balances[tokenAccount] = balances[tokenAccount].sub(amount);
 
       // Transfer the remaining to the pool
-      pool.transfer(valueLeftForPurchase);
+      poolAccount.transfer(valueLeftForPurchase);
 
-      emit Transfer(tokens, msg.sender, amount);
+      // Update pool data
+      updatePoolState(valueLeftForPurchase, true);
+
+      emit Transfer(tokenAccount, msg.sender, amount);
 
       // Update the current price based on actual token amount sold
       currentPrice = currentPrice.add(increment.mul(amount));
@@ -281,24 +321,36 @@ contract FangToken is ERC20Interface, Ownable{
         accounts[msg.sender].lastDividends = totalDividends;
       }
     }
-    
+
     function sell(uint256 amount) public returns (bool) {
+      require(pool.sellAllowed, "Sell is not yet allowed");
       require(amount > 0, "Must sell an amount greater than 0");
       
       uint256 value = amount.mul(currentPrice);
       
       require(value > .01 ether, "Transaction minimum not met");
-      require(balanceOf(tokens) > amount, "Not enough tokens available for sale.");
+      require(balanceOf(tokenAccount) > amount, "Not enough tokens available for sale.");
       require(address(this).balance >= value, "Unable to fund the sell transaction");
 
       balances[msg.sender] = balances[msg.sender].sub(amount);
-      balances[tokens] = balances[tokens].add(amount);
+      balances[tokenAccount] = balances[tokenAccount].add(amount);
 
-      emit Transfer(msg.sender, tokens, amount);
+      emit Transfer(msg.sender, tokenAccount, amount);
 
       // Update the current price based on actual token amount sold
       currentPrice = currentPrice.sub(increment.mul(amount));
 
+      if(currentPrice < lowerCap) {
+        currentPrice = lowerCap;
+      }
+
+      msg.sender.transfer(value);
+      updatePoolState(value, false);
+
       return true;
+    }
+
+    function destroy() public onlyOwner {
+      selfdestruct(owner());
     }
 }
