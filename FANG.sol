@@ -151,13 +151,17 @@ contract FangToken is ERC20Interface, Ownable{
       uint256 lastDividends;
     }
     mapping (address => Account) accounts;
+    address payable pool;
+    address payable tokens;
 
-    constructor(string memory _name, string memory _symbol, uint _decimals, uint _supply) public{
+    constructor(string memory _name, string memory _symbol, uint _decimals, uint _supply, address payable _pool, address payable _tokens) public{
         // Set variables
         name = _name;
         symbol = _symbol;
         decimals = _decimals;
         supply = _supply;
+        pool = _pool;
+        tokens = _tokens;
         decimalMult = 10**decimals;
 
         // $0.01 or 0.000053 ETH at the start time.
@@ -207,8 +211,16 @@ contract FangToken is ERC20Interface, Ownable{
     function setLowerCap(uint256 newLowerCap) public onlyOwner {
         lowerCap = newLowerCap;
     }
+
+    function setPool(address payable newPool) public onlyOwner {
+        pool = newPool;
+    }
+
+    function setTokens(address payable newTokens) public onlyOwner {
+        tokens = newTokens;
+    }
      
-     function burn(uint256 amount) public onlyOwner {
+    function burn(uint256 amount) public onlyOwner {
         balances[owner()] = balances[owner()].sub(amount);
         supply = supply.sub(amount);
         emit Transfer(owner(), address(0), amount);
@@ -233,50 +245,43 @@ contract FangToken is ERC20Interface, Ownable{
         return price;
     }
 
-    function buy() public payable returns (bool) {
-      uint256 currentPrice = tokenPrice();
-      require(msg.value >= currentPrice, "Must send enough for at least 1 token");
+    function buy(address referrer) public payable returns (bool) {
+      require(msg.sender != referrer, "Buyer and referrer cannot be the same");
 
-      address sender = msg.sender;
-      uint fee = (uint)(msg.value / 10);
-      uint numEther = msg.value - fee;
+      uint256 price = tokenPrice();
+      require(msg.value > price, "Message value must be greater than token price.");
 
-
-      
-
-      // More logic needed
-
-
-    }
-
-    // This function is intended for website processing of orders.
-    // The amount value is the total dividends that needs to be distributed.
-    // b = Buyer
-    // r = Referrer
-    // q = Token quantity
-    // rd = Referrer dividend
-    // hd = Holder dividend
-    function processOrder(address b, address r, uint32 q, uint256 rd, uint256 hd) public payable returns (bool) {
-      // Verify inputs
-      // Sender is supposed to be the website
-      require(hd > 0, "Token holder dividend must be greater than zero");
-      require(b != r, "Buyer and referrer cannot be the same");
-      require(b != msg.sender, "Buyer address cannot be sender address");
-      require(r != msg.sender, "Referrer address cannot be sender address");
-
-      // Referrer dividend
-      if(r != address(0) && rd > 0) {
-        accounts[r].balance += rd;
+      /*
+        Dividends
+       */
+      // If there is a referrer, it gets 10% off the top
+      uint256 referralDividend = 0;
+      if(referrer != address(0))
+      {
+        referralDividend = msg.value.div(10);
+        accounts[referrer].balance += referralDividend;
       }
 
-      // Added the holder dividend to the heap
-      totalDividends = totalDividends.add(hd);
+      // Holder dividend after referral is paid
+      uint256 holderDividend = msg.value.sub(referralDividend).div(10);
+      totalDividends = totalDividends.add(holderDividend);
 
-      // Fulfill token order
-      balances[msg.sender] = balances[msg.sender].sub(q);
-      balances[b] = balances[b].add(q);
-      emit Transfer(msg.sender, b, q);
+     /*
+        Tokens
+      */
+      uint256 valueLeftForPurchase = msg.value.sub(referralDividend).sub(holderDividend);
 
+      // Determine how many tokens can be bought
+      uint256 amount = valueLeftForPurchase.div(price);
+      require(balances[tokens] > amount, "Not enough tokens available for sale.");
+
+      balances[msg.sender] = balances[msg.sender].add(amount);
+      balances[tokens] = balances[tokens].sub(amount);
+
+      // Transfer the remaining to the pool
+      pool.transfer(valueLeftForPurchase);
+
+      emit Transfer(tokens, msg.sender, amount);
       return true;
     }
 
