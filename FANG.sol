@@ -132,13 +132,12 @@ contract FangToken is ERC20Interface, Ownable{
     string private name;
     string private symbol;
     uint private decimals;
-    uint private decimalMult;
     uint private supply;
     uint256 private totalTokensBought;
     uint256 private totalTokensSold;
     uint256 private totalPayouts;
     uint256 private earningsPerShare;
-    uint256 private initialPrice;
+    uint256 public currentPrice;
     uint256 private increment;
     uint256 private lowerCap;
     mapping(address => uint) public balances;
@@ -154,18 +153,16 @@ contract FangToken is ERC20Interface, Ownable{
     address payable pool;
     address payable tokens;
 
-    constructor(string memory _name, string memory _symbol, uint _decimals, uint _supply, address payable _pool, address payable _tokens) public{
-        // Set variables
-        name = _name;
-        symbol = _symbol;
-        decimals = _decimals;
-        supply = _supply;
-        pool = _pool;
-        tokens = _tokens;
-        decimalMult = 10**decimals;
-
+    constructor() public{
+        name = "FANG-WPB";
+        symbol = "FANG";
+        decimals = 18;
+        supply = 3000000000;
+        pool = "0x0000000000000000000000000000000000000000";
+        tokens = "0x0000000000000000000000000000000000000000";
+        
         // $0.01 or 0.000053 ETH at the start time.
-        initialPrice = 53000000000000;
+        currentPrice = 53000000000000;
 
         // 0.000000001 ETH
         increment = 1000000000;
@@ -174,7 +171,7 @@ contract FangToken is ERC20Interface, Ownable{
         lowerCap = 5300000000000;
 
         // Give founder all supply
-        balances[owner()] = _supply;
+        balances[owner()] = supply;
     }
     
     function totalSupply() public view returns (uint){
@@ -198,10 +195,6 @@ contract FangToken is ERC20Interface, Ownable{
         balances[recipient] = balances[recipient].add(amount);
         emit Transfer(sender, recipient, amount);
         return true;
-    }
-
-    function setInitialPrice(uint256 newInitialPrice) public onlyOwner {
-        initialPrice = newInitialPrice;
     }
 
     function setIncrement(uint256 newIncrement) public onlyOwner {
@@ -232,24 +225,8 @@ contract FangToken is ERC20Interface, Ownable{
         emit Transfer(address(0), owner(), amount);
     }
 
-    function tokenPrice() public view returns (uint256){
-      // price = initialPrice + (increment * totalTokensBought) - (increment * totalTokensSold);
-      uint256 price = initialPrice.add(
-                        increment.mul(totalTokensBought).sub(increment.mul(totalTokensSold))
-                      );
-      if(price < lowerCap)
-      {
-        price = lowerCap;
-      }
-
-        return price;
-    }
-
     function buy(address referrer) public payable returns (bool) {
       require(msg.sender != referrer, "Buyer and referrer cannot be the same");
-
-      uint256 price = tokenPrice();
-      require(msg.value > price, "Message value must be greater than token price.");
 
       /*
         Dividends
@@ -272,8 +249,9 @@ contract FangToken is ERC20Interface, Ownable{
       uint256 valueLeftForPurchase = msg.value.sub(referralDividend).sub(holderDividend);
 
       // Determine how many tokens can be bought
-      uint256 amount = valueLeftForPurchase.div(price);
+      uint256 amount = valueLeftForPurchase.div(currentPrice);
       require(balances[tokens] > amount, "Not enough tokens available for sale.");
+      require(amount >= currentPrice, "Amount must be greater than or equal to the token price.");
 
       balances[msg.sender] = balances[msg.sender].add(amount);
       balances[tokens] = balances[tokens].sub(amount);
@@ -282,6 +260,10 @@ contract FangToken is ERC20Interface, Ownable{
       pool.transfer(valueLeftForPurchase);
 
       emit Transfer(tokens, msg.sender, amount);
+
+      // Update the current price based on actual token amount sold
+      currentPrice = currentPrice.add(increment.mul(amount));
+
       return true;
     }
 
