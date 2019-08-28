@@ -281,4 +281,24 @@ contract FangToken is ERC20Interface, Ownable{
         accounts[msg.sender].lastDividends = totalDividends;
       }
     }
+    
+    function sell(uint256 amount) public returns (bool) {
+      require(amount > 0, "Must sell an amount greater than 0");
+      
+      uint256 value = amount.mul(currentPrice);
+      
+      require(value > .01 ether, "Transaction minimum not met");
+      require(balanceOf(tokens) > amount, "Not enough tokens available for sale.");
+      require(address(this).balance >= value, "Unable to fund the sell transaction");
+
+      balances[msg.sender] = balances[msg.sender].sub(amount);
+      balances[tokens] = balances[tokens].add(amount);
+
+      emit Transfer(msg.sender, tokens, amount);
+
+      // Update the current price based on actual token amount sold
+      currentPrice = currentPrice.sub(increment.mul(amount));
+
+      return true;
+    }
 }
