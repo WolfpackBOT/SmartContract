@@ -129,8 +129,8 @@ contract FangToken is ERC20Interface, Ownable{
 
     using SafeMath for uint;
 
-    string private name;
-    string private symbol;
+    string public name;
+    string public symbol;
     uint private decimals;
     uint private supply;
     uint256 private totalTokensBought;
@@ -236,7 +236,7 @@ contract FangToken is ERC20Interface, Ownable{
       if(referrer != address(0))
       {
         referralDividend = msg.value.div(10);
-        accounts[referrer].balance += referralDividend;
+        accounts[referrer].balance = accounts[referrer].balance.add(referralDividend);
       }
 
       // Holder dividend after referral is paid
