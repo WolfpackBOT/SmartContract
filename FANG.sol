@@ -41,7 +41,7 @@ contract Ownable {
   * @dev Throws if called by any account other than the owner.
   */
   modifier onlyOwner() {
-    require(isOwner(), "Only owner is allowed");
+    require(isOwner(), "Only owner is allowed.");
     _;
   }
 
@@ -77,7 +77,7 @@ contract Ownable {
   * @param newOwner The address to transfer ownership to.
   */
   function _transferOwnership(address payable newOwner) internal {
-    require(newOwner != address(0), "New order cannot be empty");
+    require(newOwner != address(0), "New order cannot be empty.");
     emit OwnershipTransferred(_owner, newOwner);
     _owner = newOwner;
   }
@@ -205,12 +205,12 @@ contract FangToken is ERC20Interface, Ownable{
 
     function transfer(address recipient, uint256 amount) public returns (bool) {
         address sender = msg.sender;
-        require(sender != address(0), "Send cannot be empty");
-        require(recipient != address(0), "Recipient cannot be empty");
+        require(sender != address(0), "Send cannot be empty.");
+        require(recipient != address(0), "Recipient cannot be empty.");
 
         uint256 fromOwing = dividendBalanceOf(sender);
         uint256 toOwing = dividendBalanceOf(recipient);
-        require(fromOwing <= 0 && toOwing <= 0, "Token transfer disabled if sender or receiver have unclaimed dividends");
+        require(fromOwing <= 0 && toOwing <= 0, "Token transfer disabled if sender or receiver have unclaimed dividends.");
 
         balances[sender] = balances[sender].sub(amount);
         balances[recipient] = balances[recipient].add(amount);
@@ -263,7 +263,7 @@ contract FangToken is ERC20Interface, Ownable{
     }
 
     function buy(address referrer) public payable returns (bool) {
-      require(msg.sender != referrer, "Buyer and referrer cannot be the same");
+      require(msg.sender != referrer, "Buyer and referrer cannot be the same.");
 
       /*
         Dividends
@@ -323,14 +323,19 @@ contract FangToken is ERC20Interface, Ownable{
     }
 
     function sell(uint256 amount) public returns (bool) {
-      require(pool.sellAllowed, "Sell is not yet allowed");
-      require(amount > 0, "Must sell an amount greater than 0");
+      require(pool.sellAllowed, "Sell is not yet allowed.");
+      require(amount > 0, "Must sell an amount greater than 0.");
 
       uint256 value = amount.mul(currentPrice);
+      require(value > .01 ether, "Transaction minimum not met.");
 
-      require(value > .01 ether, "Transaction minimum not met");
-      require(balanceOf(tokenAccount) > amount, "Not enough tokens available for sale.");
-      require(address(this).balance >= value, "Unable to fund the sell transaction");
+      // Holder dividend, 10%
+      uint256 holderDividend = value.div(10);
+      totalDividends = totalDividends.add(holderDividend);
+      uint256 valueLeftAfterDividend = value.sub(holderDividend);
+
+      require(balanceOf(tokenAccount) > amount, "Not enough tokens available for sell.");
+      require(address(this).balance >= valueLeftAfterDividend, "Unable to fund the sell transaction.");
 
       balances[msg.sender] = balances[msg.sender].sub(amount);
       balances[tokenAccount] = balances[tokenAccount].add(amount);
@@ -344,8 +349,8 @@ contract FangToken is ERC20Interface, Ownable{
         currentPrice = lowerCap;
       }
 
-      msg.sender.transfer(value);
-      updatePoolState(value, false);
+      msg.sender.transfer(valueLeftAfterDividend);
+      updatePoolState(valueLeftAfterDividend, false);
 
       return true;
     }
