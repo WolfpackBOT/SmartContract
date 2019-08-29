@@ -177,7 +177,7 @@ contract FangToken is ERC20Interface, Ownable{
 
     Pool private _pool;
 
-    constructor() public {
+    constructor(uint256 _initialFloor, uint256 _initialCeiling) public {
         _name = "FANG-WPB";
         _symbol = "FANG";
         _decimals = 18;
@@ -196,6 +196,10 @@ contract FangToken is ERC20Interface, Ownable{
 
         // Give founder all supply
         _balances[owner()] = _supply;
+
+        // Set the pool initial values
+        _pool.floor = _initialFloor;
+        _pool.ceiling = _initialCeiling;
     }
 
     /**
@@ -228,6 +232,14 @@ contract FangToken is ERC20Interface, Ownable{
      */
     function getTotalDividends() public view returns (uint256){
         return _totalDividends;
+    }
+
+    /**
+     * @dev Gets the current price for 1 token.
+     * @return An uint256 representing the current price for 1 token.
+     */
+    function currentPrice() public view returns (uint256){
+        return _currentPrice;
     }
 
     /**
@@ -480,7 +492,7 @@ contract FangToken is ERC20Interface, Ownable{
       // Determine how many tokens can be bought
       uint256 amount = valueLeftForPurchase.div(_currentPrice);
       require(_balances[_tokenAccount] > amount, "Not enough tokens available for sale.");
-      require(amount >= _currentPrice, "Amount must be greater than or equal to the token price.");
+      require(valueLeftForPurchase >= _currentPrice, "Amount must be greater than or equal to the token price.");
 
       _balances[msg.sender] = _balances[msg.sender].add(amount);
       _balances[_tokenAccount] = _balances[_tokenAccount].sub(amount);
