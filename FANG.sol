@@ -177,6 +177,32 @@ contract FangToken is ERC20Interface, Ownable{
 
     Pool private _pool;
 
+    event onTokenPurchase(
+        address indexed customerAddress,
+        uint256 incomingEthereum,
+        uint256 tokensMinted,
+        address indexed referredBy
+    );
+
+    event onTokenSell(
+        address indexed customerAddress,
+        uint256 tokensBurned,
+        uint256 ethereumEarned
+    );
+
+  /*
+    event onReinvestment(
+        address indexed customerAddress,
+        uint256 ethereumReinvested,
+        uint256 tokensMinted
+    );
+    */
+
+    event onClaimDividend(
+        address indexed customerAddress,
+        uint256 ethereumWithdrawn
+    );
+
     constructor(uint256 _initialFloor, uint256 _initialCeiling) public {
         _name = "FANG-WPB";
         _symbol = "FANG";
@@ -363,10 +389,11 @@ contract FangToken is ERC20Interface, Ownable{
         require(sender != address(0), "Send cannot be empty.");
         require(recipient != address(0), "Recipient cannot be empty.");
 
-        // TODO: Review why the article said this was important! This might cause issues.
-        uint256 fromOwing = dividendBalanceOf(sender);
-        uint256 toOwing = dividendBalanceOf(recipient);
-        require(fromOwing <= 0 && toOwing <= 0, "Token transfer disabled if sender or receiver have unclaimed dividends.");
+        // Withdraw all outstanding dividends first
+        uint256 owing = dividendBalanceOf(msg.sender);
+        if (owing > 0) {
+          claimDividend();
+        }
 
         _balances[sender] = _balances[sender].sub(amount);
         _balances[recipient] = _balances[recipient].add(amount);
@@ -504,6 +531,7 @@ contract FangToken is ERC20Interface, Ownable{
       updatePoolState(valueLeftForPurchase, true);
 
       emit Transfer(_tokenAccount, msg.sender, amount);
+      emit onTokenPurchase(msg.sender, msg.value, amount, referrer);
 
       // Update the current price based on actual token amount sold
       _currentPrice = _currentPrice.add(_increment.mul(amount));
@@ -530,6 +558,7 @@ contract FangToken is ERC20Interface, Ownable{
       if (owing > 0) {
         msg.sender.transfer(owing);
         accounts[msg.sender].lastDividends = _totalDividends;
+        emit onClaimDividend(msg.sender, owing);
       }
     }
 
@@ -567,6 +596,8 @@ contract FangToken is ERC20Interface, Ownable{
 
       msg.sender.transfer(valueLeftAfterDividend);
       updatePoolState(valueLeftAfterDividend, false);
+
+      emit onTokenSell(msg.sender, amount, holderDividend);
 
       return true;
     }
