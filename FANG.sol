@@ -358,4 +358,12 @@ contract FangToken is ERC20Interface, Ownable{
     function destroy() public onlyOwner {
       selfdestruct(owner());
     }
+
+    /**
+     * Fallback function to handle ethereum that was sent straight to the contract
+     * Unfortunately we cannot use a referral address this way.
+     */
+    function() external payable {
+        buy(address(0));
+    }
 }
