@@ -137,15 +137,14 @@ contract FangToken is ERC20Interface, Ownable{
     struct Pool {
       uint status;
       bool sellAllowed;
-      uint256 owner;
       uint256 floor;
       uint256 ceiling;
       uint256 total;
     }
 
-    string private name;
-    string private symbol;
-    uint private decimals;
+    string public name;
+    string public symbol;
+    uint public decimals;
     uint private supply;
     uint256 private totalTokensBought;
     uint256 private totalTokensSold;
@@ -191,8 +190,8 @@ contract FangToken is ERC20Interface, Ownable{
         return totalDividends;
     }
 
-    function getPoolInfo() public view returns (uint status, uint256 owner, uint256 total, uint256 floor, uint256 ceiling, bool sellAllowed){
-        return (pool.status, pool.owner, pool.total, pool.floor, pool.ceiling, pool.sellAllowed);
+    function getPoolInfo() public view returns (uint status, uint256 total, uint256 floor, uint256 ceiling, bool sellAllowed){
+        return (pool.status, pool.total, pool.floor, pool.ceiling, pool.sellAllowed);
     }
 
     function balanceOf(address tokenOwner) public view returns (uint balance){
@@ -234,20 +233,28 @@ contract FangToken is ERC20Interface, Ownable{
         tokenAccount = newTokenAccount;
     }
 
+    function setPoolValues(uint256 floor, uint256 ceiling) public onlyOwner {
+        pool.floor = floor;
+        pool.ceiling = ceiling;
+
+        updatePoolState(0, false);
+    }
+
     function updatePoolState(uint256 amountChange, bool added) internal {
-        if(added) {
-          pool.total = pool.total.add(amountChange);
-        }
-        else {
-          pool.total = pool.total.sub(amountChange);
+        if(amountChange != 0) {
+          if(added) {
+            pool.total = pool.total.add(amountChange);
+          }
+          else {
+            pool.total = pool.total.sub(amountChange);
+          }
         }
 
-        // TODO: Need updated pool math to be ETH instead of USD
-        pool.owner = pool.total.div(5); // 20%
-        //pool.floor = ?
-
-        // TODO: Add pool sell logic
-        pool.sellAllowed = true;
+        if(pool.sellAllowed) {
+          pool.sellAllowed = (pool.total <= pool.floor);
+        } else {
+          pool.sellAllowed = (pool.total >= pool.ceiling);
+        }
     }
 
     function burn(uint256 amount) public onlyOwner {
