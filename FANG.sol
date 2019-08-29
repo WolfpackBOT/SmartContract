@@ -224,6 +224,7 @@ contract FangToken is ERC20Interface, Ownable{
         _balances[owner()] = _supply;
 
         // Set the pool initial values
+        require(_initialFloor < _initialCeiling, "Ceiling must be greater than the floor.");
         _pool.floor = _initialFloor;
         _pool.ceiling = _initialCeiling;
     }
@@ -440,6 +441,7 @@ contract FangToken is ERC20Interface, Ownable{
      * @return An uint256 representing number of current dividends.
      */
     function setPoolValues(uint256 floor, uint256 ceiling) public onlyOwner {
+        require(floor < ceiling, "Ceiling must be greater than the floor.");
         _pool.floor = floor;
         _pool.ceiling = ceiling;
 
@@ -568,40 +570,40 @@ contract FangToken is ERC20Interface, Ownable{
 
     /**
      * @dev Sells an amount of tokens, and triggers a 10% dividend.
-     * @param amount Amount of tokens to sell.
+     * @param tokenAmount Amount of tokens to sell.
      * @return Bool success
      */
-    function sell(uint256 amount) public returns (bool) {
+    function sell(uint256 tokenAmount) public returns (bool) {
       require(_pool.sellAllowed, "Sell is not yet allowed.");
-      require(amount > 0, "Must sell an amount greater than 0.");
+      require(tokenAmount > 0, "Must sell an amount greater than 0.");
 
-      uint256 value = amount.mul(_currentPrice);
-      require(value > .01 ether, "Transaction minimum not met.");
+      uint256 ethValue = tokenAmount.mul(_currentPrice);
+      require(ethValue > .01 ether, "Transaction minimum not met.");
 
       // Holder dividend, 10%
-      uint256 holderDividend = value.div(10);
+      uint256 holderDividend = ethValue.div(10);
       _totalDividends = _totalDividends.add(holderDividend);
-      uint256 valueLeftAfterDividend = value.sub(holderDividend);
+      uint256 ethValueLeftAfterDividend = ethValue.sub(holderDividend);
 
-      require(balanceOf(_tokenAccount) > amount, "Not enough tokens available for sell.");
-      require(address(this).balance >= valueLeftAfterDividend, "Unable to fund the sell transaction.");
+      require(tokenAmount <= _balances[_tokenAccount], "Cannot sell more than the balance.");
+      require(address(this).balance >= ethValueLeftAfterDividend, "Unable to fund the sell transaction.");
 
-      _balances[msg.sender] = _balances[msg.sender].sub(amount);
-      _balances[_tokenAccount] = _balances[_tokenAccount].add(amount);
+      _balances[msg.sender] = _balances[msg.sender].sub(tokenAmount);
+      _balances[_tokenAccount] = _balances[_tokenAccount].add(tokenAmount);
 
-      emit Transfer(msg.sender, _tokenAccount, amount);
+      emit Transfer(msg.sender, _tokenAccount, tokenAmount);
 
       // Update the current price based on actual token amount sold
-      _currentPrice = _currentPrice.sub(_increment.mul(amount));
+      _currentPrice = _currentPrice.sub(_increment.mul(tokenAmount));
 
       if(_currentPrice < _lowerCap) {
         _currentPrice = _lowerCap;
       }
 
-      msg.sender.transfer(valueLeftAfterDividend);
-      updatePoolState(valueLeftAfterDividend, false);
+      msg.sender.transfer(ethValueLeftAfterDividend);
+      updatePoolState(ethValueLeftAfterDividend, false);
 
-      emit onTokenSell(msg.sender, amount, holderDividend);
+      emit onTokenSell(msg.sender, tokenAmount, holderDividend);
 
       return true;
     }
