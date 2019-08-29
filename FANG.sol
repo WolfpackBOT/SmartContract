@@ -461,10 +461,14 @@ contract FangToken is ERC20Interface, Ownable{
           }
         }
 
-        if(_pool.sellAllowed) {
-          _pool.sellAllowed = (_pool.total <= _pool.floor);
+        // Selling isn't allowed once the total hits the floor
+        if(_pool.total <= _pool.floor) {
+          _pool.sellAllowed = false;
         } else {
-          _pool.sellAllowed = (_pool.total >= _pool.ceiling);
+          // If selling wasn't already engauged, check it
+          if(!_pool.sellAllowed) {
+            _pool.sellAllowed = (_pool.total >= _pool.ceiling);
+          }
         }
     }
 
@@ -614,6 +618,18 @@ contract FangToken is ERC20Interface, Ownable{
         _balances[from] = _balances[from].sub(value);
         _balances[to] = _balances[to].add(value);
         emit Transfer(from, to, value);
+    }
+
+    /**
+     * @dev Alias to sell and claim all dividends
+     */
+    function exit() public {
+        uint256 _tokens = _balances[msg.sender];
+        if(_tokens > 0) {
+          sell(_tokens);
+        }
+
+        claimDividend();
     }
 
     /**
