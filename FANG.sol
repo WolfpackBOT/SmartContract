@@ -166,6 +166,9 @@ contract FangToken is ERC20Interface, Ownable{
     uint256 private _currentPrice;
     uint256 private _increment;
     uint256 private _lowerCap;
+    uint256 private _minimumEthSellAmount;
+    uint256 private _tokenHolderDividend;
+    uint256 private _referrerDividend;
     uint256 private _totalDividends;
     address payable private _poolAccount;
     address payable private _tokenAccount;
@@ -210,15 +213,12 @@ contract FangToken is ERC20Interface, Ownable{
         _supply = 3000000000;
         _poolAccount = 0x0000000000000000000000000000000000000000;
         _tokenAccount = 0x0000000000000000000000000000000000000000;
-
-        // $0.01 or 0.000053 ETH at the start time.
-        _currentPrice = 53000000000000;
-
-        // 0.000000001 ETH
-        _increment = 1000000000;
-
-        // $0.001 or 0.0000053 ETH at the start time.
-        _lowerCap = 5300000000000;
+        _currentPrice = .000053 ether;
+        _increment = .000000001 ether;
+        _lowerCap = .0000053 ether;
+        _minimumEthSellAmount = .01 ether;
+        _tokenHolderDividend = 10;
+        _referrerDividend = 3;
 
         // Give founder all supply
         _balances[owner()] = _supply;
@@ -267,6 +267,30 @@ contract FangToken is ERC20Interface, Ownable{
      */
     function currentPrice() public view returns (uint256){
         return _currentPrice;
+    }
+
+    /**
+     * @dev Gets the minimum ETH sell amount.
+     * @return An uint256 representing the minimum number of ETH for a sell.
+     */
+    function minimumEthSellAmount() public view returns (uint256){
+        return _minimumEthSellAmount;
+    }
+
+    /**
+     * @dev Gets the dividend for token holders.
+     * @return An uint256 representing the dividend for token holders.
+     */
+    function tokenHolderDividend() public view returns (uint256){
+        return _tokenHolderDividend;
+    }
+
+    /**
+     * @dev Gets the dividend of a referrer
+     * @return An uint256 representing the dividend for the referrer.
+     */
+    function referrerDividend() public view returns (uint256){
+        return _referrerDividend;
     }
 
     /**
@@ -479,7 +503,7 @@ contract FangToken is ERC20Interface, Ownable{
      * @param ethToSpend Amount of ETH to spend.
      */
     function calculateTokensReceived(uint256 ethToSpend) public view returns(uint256) {
-        uint256 totalDividend = ethToSpend.div(10);
+        uint256 totalDividend = ethToSpend.div(_tokenHolderDividend);
         uint256 ethValueLeftForPurchase = totalDividend.sub(totalDividend);
         return ethValueLeftForPurchase.div(_currentPrice);
     }
@@ -494,7 +518,7 @@ contract FangToken is ERC20Interface, Ownable{
         require(tokensToSell <= _balances[msg.sender], "Cannot sell more than the balance.");
 
         uint256 ethValue = tokensToSell.mul(_currentPrice);
-        uint256 holderDividend = ethValue.div(10);
+        uint256 holderDividend = ethValue.div(_tokenHolderDividend);
         return ethValue.sub(holderDividend);
     }
 
@@ -529,20 +553,20 @@ contract FangToken is ERC20Interface, Ownable{
       /*
         Dividends
        */
-      uint256 totalDividend = msg.value.div(10);
-      uint256 tokenHolderDividend = 0;
+      uint256 totalDividend = msg.value.div(_tokenHolderDividend);
+      uint256 actualTokenHolderDividend = 0;
       uint256 referralDividend = 0;
 
       if(referrer != address(0))
       {
-        referralDividend = totalDividend.div(3);
+        referralDividend = totalDividend.div(_referrerDividend);
         accounts[referrer].balance = accounts[referrer].balance.add(referralDividend);
       }
 
-      tokenHolderDividend = totalDividend.sub(referralDividend);
+      actualTokenHolderDividend = totalDividend.sub(referralDividend);
 
       // Holder dividend after referral is paid
-      _totalDividends = _totalDividends.add(tokenHolderDividend);
+      _totalDividends = _totalDividends.add(actualTokenHolderDividend);
 
      /*
         Tokens
@@ -596,7 +620,7 @@ contract FangToken is ERC20Interface, Ownable{
     }
 
     /**
-     * @dev Sells an amount of tokens, and triggers a 10% dividend.
+     * @dev Sells an amount of tokens, and triggers a dividend.
      * @param tokenAmount Amount of tokens to sell.
      * @return Bool success
      */
@@ -605,10 +629,9 @@ contract FangToken is ERC20Interface, Ownable{
       require(tokenAmount > 0, "Must sell an amount greater than 0.");
 
       uint256 ethValue = tokenAmount.mul(_currentPrice);
-      require(ethValue > .01 ether, "Transaction minimum not met.");
+      require(ethValue >= _minimumEthSellAmount, "Transaction minimum not met.");
 
-      // Holder dividend, 10%
-      uint256 holderDividend = ethValue.div(10);
+      uint256 holderDividend = ethValue.div(_tokenHolderDividend);
       _totalDividends = _totalDividends.add(holderDividend);
       uint256 ethValueLeftAfterDividend = ethValue.sub(holderDividend);
 
