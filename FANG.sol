@@ -427,6 +427,22 @@ contract FangToken is ERC20Interface, Ownable{
     }
 
     /**
+     * @dev Sets the name of the token. OnlyOwner
+     * @param newName The new token name.
+     */
+    function setName(string memory newName) public onlyOwner {
+        _name = newName;
+    }
+
+    /**
+     * @dev Sets the symbol of the token. OnlyOwner
+     * @param newSymbol The new symbol for the token.
+     */
+    function setSymbol(string memory newSymbol) public onlyOwner {
+        _symbol = newSymbol;
+    }
+
+    /**
      * @dev Sets the increment for buys and sells. OnlyOwner
      * @param newIncrement The new increment for buys and sells.
      */
