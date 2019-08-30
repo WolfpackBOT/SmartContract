@@ -170,6 +170,7 @@ contract FangToken is ERC20Interface, Ownable{
     uint256 private _tokenHolderDividend;
     uint256 private _referrerDividend;
     uint256 private _totalDividends;
+    uint256 private _percentBase;
     address payable private _poolAccount;
     address payable private _tokenAccount;
 
@@ -206,22 +207,24 @@ contract FangToken is ERC20Interface, Ownable{
         uint256 ethereumWithdrawn
     );
 
-    constructor(uint256 _initialFloor, uint256 _initialCeiling) public {
+    constructor(uint256 _initialFloor, uint256 _initialCeiling, uint256 _tokenAccountSupply) public {
         _name = "FANG-WPB";
         _symbol = "FANG";
         _decimals = 18;
         _supply = 3000000000;
-        _poolAccount = 0x0000000000000000000000000000000000000000;
-        _tokenAccount = 0x0000000000000000000000000000000000000000;
+        _poolAccount = address(0x14723A09ACff6D2A60DcdF7aA4AFf308FDDC160C);
+        _tokenAccount = address(0x4B0897b0513fdC7C541B6d9D7E929C4e5364D2dB);
         _currentPrice = .000053 ether;
         _increment = .000000001 ether;
         _lowerCap = .0000053 ether;
         _minimumEthSellAmount = .01 ether;
-        _tokenHolderDividend = 10;
-        _referrerDividend = 3;
+        _tokenHolderDividend = 10; // this is a percentage
+        _referrerDividend = 30;// this is a percentage of tokenholder dividend
+        _percentBase = 100; // _percentBase.div(uint256) will return a whole integer percentage value you can divide large numbers with
 
         // Give founder all supply
-        _balances[owner()] = _supply;
+        _balances[owner()] = _supply.sub(_tokenAccountSupply);
+        _balances[_tokenAccount] = _tokenAccountSupply;
 
         // Set the pool initial values
         require(_initialFloor < _initialCeiling, "Ceiling must be greater than the floor.");
@@ -291,6 +294,15 @@ contract FangToken is ERC20Interface, Ownable{
      */
     function referrerDividend() public view returns (uint256){
         return _referrerDividend;
+    }
+    
+    /**
+     * @dev Gets the dividend of a referrer
+     * @return An uint256 representing the dividend for the referrer.
+     */
+    function divideByPercent(uint256 percent) private view returns (uint256){
+        uint256 result = _percentBase.div(percent);
+        return result;
     }
 
     /**
@@ -543,7 +555,7 @@ contract FangToken is ERC20Interface, Ownable{
      * @param ethToSpend Amount of ETH to spend.
      */
     function calculateTokensReceived(uint256 ethToSpend) public view returns(uint256) {
-        uint256 totalDividend = ethToSpend.div(_tokenHolderDividend);
+        uint256 totalDividend = ethToSpend.div(divideByPercent(_tokenHolderDividend));
         uint256 ethValueLeftForPurchase = totalDividend.sub(totalDividend);
         return ethValueLeftForPurchase.div(_currentPrice);
     }
@@ -558,7 +570,7 @@ contract FangToken is ERC20Interface, Ownable{
         require(tokensToSell <= _balances[msg.sender], "Cannot sell more than the balance.");
 
         uint256 ethValue = tokensToSell.mul(_currentPrice);
-        uint256 holderDividend = ethValue.div(_tokenHolderDividend);
+        uint256 holderDividend = ethValue.div(divideByPercent(_tokenHolderDividend));
         return ethValue.sub(holderDividend);
     }
 
@@ -593,13 +605,13 @@ contract FangToken is ERC20Interface, Ownable{
       /*
         Dividends
        */
-      uint256 totalDividend = msg.value.div(_tokenHolderDividend);
+      uint256 totalDividend = msg.value.div(divideByPercent(_tokenHolderDividend));
       uint256 actualTokenHolderDividend = 0;
       uint256 referralDividend = 0;
 
       if(referrer != address(0))
       {
-        referralDividend = totalDividend.div(_referrerDividend);
+        referralDividend = totalDividend.div(divideByPercent(_referrerDividend)); 
         accounts[referrer].balance = accounts[referrer].balance.add(referralDividend);
       }
 
@@ -671,7 +683,7 @@ contract FangToken is ERC20Interface, Ownable{
       uint256 ethValue = tokenAmount.mul(_currentPrice);
       require(ethValue >= _minimumEthSellAmount, "Transaction minimum not met.");
 
-      uint256 holderDividend = ethValue.div(_tokenHolderDividend);
+      uint256 holderDividend = ethValue.div(divideByPercent(_tokenHolderDividend));
       _totalDividends = _totalDividends.add(holderDividend);
       uint256 ethValueLeftAfterDividend = ethValue.sub(holderDividend);
 
