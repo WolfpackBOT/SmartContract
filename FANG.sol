@@ -459,6 +459,30 @@ contract FangToken is ERC20Interface, Ownable{
     }
 
     /**
+     * @dev Updates the minimum ETH sell amount. OnlyOwner
+     * @param newMinimumEthSellAmount The new minimum amount of ETH for a sell.
+     */
+    function setMinimumEthSellAmount(uint256 newMinimumEthSellAmount) public onlyOwner {
+        _minimumEthSellAmount = newMinimumEthSellAmount;
+    }
+
+    /**
+     * @dev Updates the token holder dividend. OnlyOwner
+     * @param newTokenHolderDividend The new token holder dividend.
+     */
+    function setTokenHolderDividend(uint256 newTokenHolderDividend) public onlyOwner {
+        _tokenHolderDividend = newTokenHolderDividend;
+    }
+
+    /**
+     * @dev Updates the referral dividend. OnlyOwner
+     * @param newReferrerDividend The new referral dividend.
+     */
+    function setReferrerDividend(uint256 newReferrerDividend) public onlyOwner {
+        _referrerDividend = newReferrerDividend;
+    }
+
+    /**
      * @dev Gets the total accumilated dividends. OnlyOwner
      * @param floor The updated floor of the pool
      * @param ceiling The updated ceiling of the pool
