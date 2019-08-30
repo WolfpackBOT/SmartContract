@@ -474,6 +474,30 @@ contract FangToken is ERC20Interface, Ownable{
         }
     }
 
+     /**
+     * @dev Frontend function to calculate how many tokens could be bought with an amount of ETH.
+     * @param ethToSpend Amount of ETH to spend.
+     */
+    function calculateTokensReceived(uint256 ethToSpend) public view returns(uint256) {
+        uint256 totalDividend = ethToSpend.div(10);
+        uint256 ethValueLeftForPurchase = totalDividend.sub(totalDividend);
+        return ethValueLeftForPurchase.div(_currentPrice);
+    }
+
+     /**
+     * @dev Frontend function to calculate how much ETH would be returned after a sell.
+     * @param tokensToSell Amount of tokens to sell.
+     */
+    function calculateEthReceived(uint256 tokensToSell) public view returns(uint256) {
+        require(_pool.sellAllowed, "Sell is not yet allowed.");
+        require(tokensToSell > 0, "Must sell an amount greater than 0.");
+        require(tokensToSell <= _balances[msg.sender], "Cannot sell more than the balance.");
+
+        uint256 ethValue = tokensToSell.mul(_currentPrice);
+        uint256 holderDividend = ethValue.div(10);
+        return ethValue.sub(holderDividend);
+    }
+
     /**
      * @dev Burn an amount of tokens. OnlyOwner
      * @param amount Amount of tokens to burn.
@@ -505,42 +529,45 @@ contract FangToken is ERC20Interface, Ownable{
       /*
         Dividends
        */
-      // If there is a referrer, it gets 10% off the top
+      uint256 totalDividend = msg.value.div(10);
+      uint256 tokenHolderDividend = 0;
       uint256 referralDividend = 0;
+
       if(referrer != address(0))
       {
-        referralDividend = msg.value.div(10);
+        referralDividend = totalDividend.div(3);
         accounts[referrer].balance = accounts[referrer].balance.add(referralDividend);
       }
 
+      tokenHolderDividend = totalDividend.sub(referralDividend);
+
       // Holder dividend after referral is paid
-      uint256 holderDividend = msg.value.sub(referralDividend).div(10);
-      _totalDividends = _totalDividends.add(holderDividend);
+      _totalDividends = _totalDividends.add(tokenHolderDividend);
 
      /*
         Tokens
       */
-      uint256 valueLeftForPurchase = msg.value.sub(referralDividend).sub(holderDividend);
+      uint256 ethValueLeftForPurchase = msg.value.sub(totalDividend);
 
       // Determine how many tokens can be bought
-      uint256 amount = valueLeftForPurchase.div(_currentPrice);
-      require(_balances[_tokenAccount] > amount, "Not enough tokens available for sale.");
-      require(valueLeftForPurchase >= _currentPrice, "Amount must be greater than or equal to the token price.");
+      uint256 tokenAmount = ethValueLeftForPurchase.div(_currentPrice);
+      require(_balances[_tokenAccount] > tokenAmount, "Not enough tokens available for sale.");
+      require(ethValueLeftForPurchase >= _currentPrice, "Amount must be greater than or equal to the token price.");
 
-      _balances[msg.sender] = _balances[msg.sender].add(amount);
-      _balances[_tokenAccount] = _balances[_tokenAccount].sub(amount);
+      _balances[msg.sender] = _balances[msg.sender].add(tokenAmount);
+      _balances[_tokenAccount] = _balances[_tokenAccount].sub(tokenAmount);
 
       // Transfer the remaining to the pool
-      _poolAccount.transfer(valueLeftForPurchase);
+      _poolAccount.transfer(ethValueLeftForPurchase);
 
       // Update pool data
-      updatePoolState(valueLeftForPurchase, true);
+      updatePoolState(ethValueLeftForPurchase, true);
 
-      emit Transfer(_tokenAccount, msg.sender, amount);
-      emit onTokenPurchase(msg.sender, msg.value, amount, referrer);
+      emit Transfer(_tokenAccount, msg.sender, tokenAmount);
+      emit onTokenPurchase(msg.sender, msg.value, tokenAmount, referrer);
 
       // Update the current price based on actual token amount sold
-      _currentPrice = _currentPrice.add(_increment.mul(amount));
+      _currentPrice = _currentPrice.add(_increment.mul(tokenAmount));
 
       return true;
     }
