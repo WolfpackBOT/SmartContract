@@ -143,7 +143,6 @@ contract FangToken is ERC20Interface, Ownable{
     using SafeMath for uint;
 
     struct Account {
-      uint256 balance;
       uint256 lastDividends;
     }
 
@@ -655,7 +654,7 @@ contract FangToken is ERC20Interface, Ownable{
      */
     function dividendBalanceOf(address account) public view returns (uint256) {
       uint256 newDividends = _totalDividends.sub(accounts[account].lastDividends);
-      uint256 product = accounts[account].balance.mul(newDividends);
+      uint256 product = _balances[account].mul(newDividends);
       return product.div(_supply);
     }
 
