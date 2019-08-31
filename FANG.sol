@@ -599,7 +599,7 @@ contract FangToken is ERC20Interface, Ownable{
      * @param referrer Address of the referrer.
      * @return Bool success
      */
-    function buy(address referrer) public payable returns (bool) {
+    function buy(address payable referrer) public payable returns (bool) {
       require(msg.sender != referrer, "Buyer and referrer cannot be the same.");
 
       /*
@@ -612,7 +612,7 @@ contract FangToken is ERC20Interface, Ownable{
       if(referrer != address(0))
       {
         referralDividend = totalDividend.div(divideByPercent(_referrerDividend)); 
-        accounts[referrer].balance = accounts[referrer].balance.add(referralDividend);
+        referrer.transfer(referralDividend);
       }
 
       actualTokenHolderDividend = totalDividend.sub(referralDividend);
