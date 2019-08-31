@@ -600,6 +600,8 @@ contract FangToken is ERC20Interface, Ownable{
      */
     function buy(address payable referrer) public payable returns (bool) {
       require(msg.sender != referrer, "Buyer and referrer cannot be the same.");
+      
+      claimDividendByAddress(msg.sender);
 
       /*
         Dividends
@@ -662,13 +664,25 @@ contract FangToken is ERC20Interface, Ownable{
      * @dev Claim the currently owed dividends.
      */
     function claimDividend() public {
-      uint256 owing = dividendBalanceOf(msg.sender);
+      claimDividendCore(msg.sender);
+    }
+    
+    /**
+     * @dev Claim the currently owed dividends.
+     */
+    function claimDividendByAddress(address payable sender) private {
+      claimDividendCore(sender);
+    }
+    
+    function claimDividendCore(address payable sender) private {
+      uint256 owing = dividendBalanceOf(sender);
       if (owing > 0) {
-        msg.sender.transfer(owing);
-        accounts[msg.sender].lastDividends = _totalDividends;
-        emit onClaimDividend(msg.sender, owing);
+        sender.transfer(owing);
+        accounts[sender].lastDividends = _totalDividends;
+        emit onClaimDividend(sender, owing);
       }
     }
+    
 
     /**
      * @dev Sells an amount of tokens, and triggers a dividend.
@@ -681,6 +695,8 @@ contract FangToken is ERC20Interface, Ownable{
 
       uint256 ethValue = tokenAmount.mul(_currentPrice);
       require(ethValue >= _minimumEthSellAmount, "Transaction minimum not met.");
+      
+      claimDividendByAddress(msg.sender);
 
       uint256 holderDividend = ethValue.div(divideByPercent(_tokenHolderDividend));
       _totalDividends = _totalDividends.add(holderDividend);
@@ -688,6 +704,8 @@ contract FangToken is ERC20Interface, Ownable{
 
       require(tokenAmount <= _balances[_tokenAccount], "Cannot sell more than the balance.");
       require(address(this).balance >= ethValueLeftAfterDividend, "Unable to fund the sell transaction.");
+      
+      claimDividendByAddress(msg.sender);
 
       _balances[msg.sender] = _balances[msg.sender].sub(tokenAmount);
       _balances[_tokenAccount] = _balances[_tokenAccount].add(tokenAmount);
