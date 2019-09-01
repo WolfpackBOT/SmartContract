@@ -152,6 +152,8 @@ contract FangToken is ERC20Interface, Ownable{
       uint256 floor;
       uint256 ceiling;
       uint256 total;
+      uint256 insurancePercent;
+      uint256 insuranceTotal;
     }
 
     string private _name;
@@ -229,6 +231,7 @@ contract FangToken is ERC20Interface, Ownable{
         require(_initialFloor < _initialCeiling, "Ceiling must be greater than the floor.");
         _pool.floor = _initialFloor;
         _pool.ceiling = _initialCeiling;
+        _pool.insurancePercent = 20;
     }
 
     /**
@@ -308,8 +311,8 @@ contract FangToken is ERC20Interface, Ownable{
      * @dev Gets the current pool information.
      * @return Properties related to the pool information.
      */
-    function getPoolInfo() public view returns (uint status, uint256 total, uint256 floor, uint256 ceiling, bool sellAllowed){
-        return (_pool.status, _pool.total, _pool.floor, _pool.ceiling, _pool.sellAllowed);
+    function getPoolInfo() public view returns (uint status, uint256 total, uint256 floor, uint256 ceiling, uint256 insuranceRequired, uint256 insuranceTotal, bool sellAllowed){
+        return (_pool.status, _pool.total, _pool.floor, _pool.ceiling, InsuranceRequired(), _pool.insuranceTotal, _pool.sellAllowed);
     }
 
     /**
@@ -529,24 +532,59 @@ contract FangToken is ERC20Interface, Ownable{
      * @param added Added if it was a purchase, false of it was a sell.
      */
     function updatePoolState(uint256 amountChange, bool added) internal {
+        uint256 insuranceRequired = InsuranceRequired();
         if(amountChange != 0) {
           if(added) {
-            _pool.total = _pool.total.add(amountChange);
+            if(_pool.insuranceTotal < insuranceRequired)
+            {
+                if(_pool.insuranceTotal.add(amountChange) >= insuranceRequired)
+                {
+                    _pool.total = _pool.total.add(insuranceRequired.sub(_pool.insuranceTotal));
+                    _pool.insuranceTotal = insuranceRequired;
+                }
+                else
+                {
+                    _pool.insuranceTotal = _pool.insuranceTotal.add(amountChange);
+                }
+            }
+            else
+            {
+                _pool.total = _pool.total.add(amountChange);
+            }
+            
           }
           else {
-            _pool.total = _pool.total.sub(amountChange);
+              require(_pool.total.sub(amountChange) >= 0, "Pool total can not go below 0.");
+                _pool.total = _pool.total.sub(amountChange);
           }
         }
-
-        // Selling isn't allowed once the total hits the floor
-        if(_pool.total <= _pool.floor) {
-          _pool.sellAllowed = false;
-        } else {
-          // If selling wasn't already engauged, check it
-          if(!_pool.sellAllowed) {
-            _pool.sellAllowed = (_pool.total >= _pool.ceiling);
-          }
+        
+        // Insurance Balance Must be funded at x% of ceiling
+        if(_pool.insuranceTotal < insuranceRequired)
+        {
+            _pool.sellAllowed = false;
         }
+        else
+        {
+            // If selling was allowed, only turn it off if <= floor
+            if(_pool.sellAllowed && _pool.total <= _pool.floor)
+            {
+                _pool.sellAllowed = false;
+            }
+            // If selling wasn't allowed, turn it back on if >= ceiling
+            else if(!_pool.sellAllowed && _pool.total >= _pool.ceiling)
+            {
+                _pool.sellAllowed = true;
+            }
+        }
+    }
+    
+    /**
+     * @dev Function used to see how many funds are in the insurance balance
+     */
+    function InsuranceRequired() public view returns(uint256)
+    {
+        return _pool.ceiling.div(divideByPercent(_pool.insurancePercent));
     }
 
      /**
@@ -591,6 +629,16 @@ contract FangToken is ERC20Interface, Ownable{
         _supply = _supply.add(amount);
         _balances[owner()] = _balances[owner()].add(amount);
         emit Transfer(address(0), owner(), amount);
+    }
+    
+    /**
+     * @dev Withdraw insurance. OnlyOwner
+     * @param amount Amount of eth to withdraw
+     */
+    function withdrawInsurance(uint256 amount) public onlyOwner {
+        _pool.insuranceTotal = _pool.insuranceTotal.add(amount);
+        // TODO: need event for withdrawing insurance
+        //emit Transfer(address(0), owner(), amount);
     }
 
     /**
