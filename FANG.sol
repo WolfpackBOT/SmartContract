@@ -539,7 +539,8 @@ contract FangToken is ERC20Interface, Ownable{
             {
                 if(_pool.insuranceTotal.add(amountChange) >= insuranceRequired)
                 {
-                    _pool.total = _pool.total.add(insuranceRequired.sub(_pool.insuranceTotal));
+                    uint256 extra = amountChange.sub(insuranceRequired.sub(_pool.insuranceTotal));
+                    _pool.total = _pool.total.add(extra);
                     _pool.insuranceTotal = insuranceRequired;
                 }
                 else
