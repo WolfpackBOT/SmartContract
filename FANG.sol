@@ -300,7 +300,7 @@ contract FangToken is ERC20Interface, Ownable{
     function referrerDividend() public view returns (uint256){
         return _referrerDividend;
     }
-    
+
     /**
      * @dev Gets the dividend of a referrer
      * @return An uint256 representing the dividend for the referrer.
@@ -544,7 +544,7 @@ contract FangToken is ERC20Interface, Ownable{
                 _pool.total = _pool.total.sub(amountChange);
           }
         }
-        
+
         // If selling was allowed, only turn it off if <= floor
         if(_pool.sellAllowed && _pool.total <= _pool.floor)
         {
@@ -562,9 +562,9 @@ contract FangToken is ERC20Interface, Ownable{
      * @param ethToSpend Amount of ETH to spend.
      */
     function calculateTokensReceived(uint256 ethToSpend) public view returns(uint256) {
-        uint256 totalDividend = ethToSpend.div(divideByPercent(_tokenHolderDividend));
-        uint256 ethValueLeftForPurchase = totalDividend.sub(totalDividend);
-        return ethValueLeftForPurchase.div(_currentPrice);
+      uint256 totalDividend = ethToSpend.div(divideByPercent(_tokenHolderDividend));
+      uint256 ethValueLeftForPurchase = ethToSpend.sub(totalDividend);
+      return ethValueLeftForPurchase.div(_currentPrice);
     }
 
      /**
@@ -572,7 +572,6 @@ contract FangToken is ERC20Interface, Ownable{
      * @param tokensToSell Amount of tokens to sell.
      */
     function calculateEthReceived(uint256 tokensToSell) public view returns(uint256) {
-        require(_pool.sellAllowed, "Sell is not yet allowed.");
         require(tokensToSell > 0, "Must sell an amount greater than 0.");
         require(tokensToSell <= _balances[msg.sender], "Cannot sell more than the balance.");
 
@@ -600,7 +599,7 @@ contract FangToken is ERC20Interface, Ownable{
         _balances[owner()] = _balances[owner()].add(amount);
         emit Transfer(address(0), owner(), amount);
     }
-    
+
     /**
      * @dev Withdraw insurance. OnlyOwner
      */
@@ -611,7 +610,7 @@ contract FangToken is ERC20Interface, Ownable{
         // TODO: need event for withdrawing insurance
         //emit Transfer(address(0), owner(), amount);
     }
-    
+
     /**
      * @dev Withdraw treasury. OnlyOwner
      */
@@ -630,7 +629,6 @@ contract FangToken is ERC20Interface, Ownable{
      */
     function buy(address payable referrer) public payable returns (bool) {
       require(msg.sender != referrer, "Buyer and referrer cannot be the same.");
-      
       claimDividendByAddress(msg.sender);
 
       /*
@@ -642,7 +640,7 @@ contract FangToken is ERC20Interface, Ownable{
 
       if(referrer != address(0))
       {
-        referralDividend = totalDividend.div(divideByPercent(_referrerDividend)); 
+        referralDividend = totalDividend.div(divideByPercent(_referrerDividend));
         referrer.transfer(referralDividend);
       }
 
@@ -664,13 +662,12 @@ contract FangToken is ERC20Interface, Ownable{
       _balances[msg.sender] = _balances[msg.sender].add(tokenAmount);
       _balances[_tokenAccount] = _balances[_tokenAccount].sub(tokenAmount);
 
-    
       uint256 insuranceCut = msg.value.div(divideByPercent(_pool.insurancePercent));
       _pool.insuranceTotal = _pool.insuranceTotal.add(insuranceCut);
-      
+
       uint256 treasuryCut = msg.value.div(divideByPercent(_pool.treasuryPercent));
       _pool.treasuryTotal = _pool.treasuryTotal.add(treasuryCut);
-      
+
       ethValueLeftForPurchase = ethValueLeftForPurchase.sub(insuranceCut).sub(treasuryCut);
 
       // Update pool data
@@ -702,14 +699,14 @@ contract FangToken is ERC20Interface, Ownable{
     function claimDividend() public {
       claimDividendCore(msg.sender);
     }
-    
+
     /**
      * @dev Claim the currently owed dividends.
      */
     function claimDividendByAddress(address payable sender) private {
       claimDividendCore(sender);
     }
-    
+
     function claimDividendCore(address payable sender) private {
       uint256 owing = dividendBalanceOf(sender);
       if (owing > 0) {
@@ -718,7 +715,6 @@ contract FangToken is ERC20Interface, Ownable{
         emit onClaimDividend(sender, owing);
       }
     }
-    
 
     /**
      * @dev Sells an amount of tokens, and triggers a dividend.
@@ -731,7 +727,7 @@ contract FangToken is ERC20Interface, Ownable{
 
       uint256 ethValue = tokenAmount.mul(_currentPrice);
       require(ethValue >= _minimumEthSellAmount, "Transaction minimum not met.");
-      
+
       claimDividendByAddress(msg.sender);
 
       uint256 holderDividend = ethValue.div(divideByPercent(_tokenHolderDividend));
@@ -740,7 +736,7 @@ contract FangToken is ERC20Interface, Ownable{
 
       require(tokenAmount <= _balances[_tokenAccount], "Cannot sell more than the balance.");
       require(address(this).balance >= ethValueLeftAfterDividend, "Unable to fund the sell transaction.");
-      
+
       claimDividendByAddress(msg.sender);
 
       _balances[msg.sender] = _balances[msg.sender].sub(tokenAmount);
