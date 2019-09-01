@@ -636,7 +636,11 @@ contract FangToken is ERC20Interface, Ownable{
      * @param amount Amount of eth to withdraw
      */
     function withdrawInsurance(uint256 amount) public onlyOwner {
-        _pool.insuranceTotal = _pool.insuranceTotal.add(amount);
+        require(amount <= _pool.insuranceTotal);
+        address payable owner = owner();
+        owner.transfer(amount);
+        _pool.insuranceTotal = _pool.insuranceTotal.sub(amount);
+        updatePoolState(0, false);
         // TODO: need event for withdrawing insurance
         //emit Transfer(address(0), owner(), amount);
     }
