@@ -156,6 +156,7 @@ contract FangToken is ERC20Interface, Ownable{
       uint256 operatingTotal;
       uint256 treasuryPercent;
       uint256 treasuryTotal;
+      uint256 totalDividends;
     }
 
     string private _name;
@@ -172,7 +173,6 @@ contract FangToken is ERC20Interface, Ownable{
     uint256 private _minimumEthSellAmount;
     uint256 private _tokenHolderDividend;
     uint256 private _referrerDividend;
-    uint256 private _totalDividends;
     uint256 private _percentBase;
     address payable private _poolAccount;
     address payable private _tokenAccount;
@@ -266,7 +266,7 @@ contract FangToken is ERC20Interface, Ownable{
      * @return An uint256 representing number of current dividends.
      */
     function getTotalDividends() public view returns (uint256){
-        return _totalDividends;
+        return _pool.totalDividends;
     }
 
     /**
@@ -314,8 +314,8 @@ contract FangToken is ERC20Interface, Ownable{
      * @dev Gets the current pool information.
      * @return Properties related to the pool information.
      */
-    function getPoolInfo() public view returns (uint status, uint256 total, uint256 floor, uint256 ceiling, uint256 operatingTotal, uint256 treasuryTotal, bool sellAllowed){
-        return (_pool.status, _pool.total, _pool.floor, _pool.ceiling, _pool.operatingTotal, _pool.treasuryTotal, _pool.sellAllowed);
+    function getPoolInfo() public view returns (uint status, uint256 total, uint256 floor, uint256 ceiling, uint256 operatingTotal, uint256 treasuryTotal, uint256 totalDividends, bool sellAllowed){
+        return (_pool.status, _pool.total, _pool.floor, _pool.ceiling, _pool.operatingTotal, _pool.treasuryTotal, _pool.totalDividends, _pool.sellAllowed);
     }
 
     /**
@@ -626,7 +626,7 @@ contract FangToken is ERC20Interface, Ownable{
      * @dev Fund Total dividends.  "Rain on holders propertionally."
      */
     function fundTotalDividends() public payable {
-        _totalDividends = _totalDividends.add(msg.value);
+        _pool.totalDividends = _pool.totalDividends.add(msg.value);
         // TODO: need event for funding dividends
         //emit Transfer(address(0), owner(), amount);
     }
@@ -643,44 +643,45 @@ contract FangToken is ERC20Interface, Ownable{
       /*
         Dividends
        */
-      uint256 totalDividend = msg.value.div(divideByPercent(_tokenHolderDividend));
-      uint256 actualTokenHolderDividend = 0;
-      uint256 referralDividend = 0;
+      uint256 tokenAmount = 0; 
+        uint256 referralDividend = 0;
+        uint256 actualTokenHolderDividend = 0;
+        uint256 operatingCut = 0;
+        uint256 treasuryCut = 0;
+        uint256 poolIncrease = 0;
+        bool hasReferrer = false;
 
       if(referrer != address(0))
       {
-        referralDividend = totalDividend.div(divideByPercent(_referrerDividend));
-        referrer.transfer(referralDividend);
+          hasReferrer = true;
       }
 
-      actualTokenHolderDividend = totalDividend.sub(referralDividend);
-
-      // Holder dividend after referral is paid
-      _totalDividends = _totalDividends.add(actualTokenHolderDividend);
-
+      (tokenAmount, referralDividend, actualTokenHolderDividend, operatingCut, treasuryCut, poolIncrease) = estimateBuy(msg.value, hasReferrer);
+      
      /*
         Tokens
       */
-      uint256 ethValueLeftForPurchase = msg.value.sub(totalDividend);
-
-      // Determine how many tokens can be bought
-      uint256 tokenAmount = ethValueLeftForPurchase.div(_currentPrice);
       require(_balances[_tokenAccount] > tokenAmount, "Not enough tokens available for sale.");
-      require(ethValueLeftForPurchase >= _currentPrice, "Amount must be greater than or equal to the token price.");
+      require(poolIncrease >= _currentPrice, "Amount must be greater than or equal to the token price.");
 
       _balances[msg.sender] = _balances[msg.sender].add(tokenAmount);
       _balances[_tokenAccount] = _balances[_tokenAccount].sub(tokenAmount);
-
-      uint256 operatingCut = msg.value.div(divideByPercent(_pool.operatingPercent));
+      
+      
+      // Adjust pool values
       _pool.operatingTotal = _pool.operatingTotal.add(operatingCut);
 
-      uint256 treasuryCut = msg.value.div(divideByPercent(_pool.treasuryPercent));
       _pool.treasuryTotal = _pool.treasuryTotal.add(treasuryCut);
-
-      ethValueLeftForPurchase = ethValueLeftForPurchase.sub(operatingCut).sub(treasuryCut);
-
-      // Update pool data
-      updatePoolState(ethValueLeftForPurchase, true);
+      
+      _pool.totalDividends = _pool.totalDividends.add(actualTokenHolderDividend);
+      
+      updatePoolState(poolIncrease, true);
+      
+      // Pay Referrer if necessary
+      if(hasReferrer)
+      {
+          referrer.transfer(referralDividend);
+      }
 
       emit Transfer(_tokenAccount, msg.sender, tokenAmount);
       emit onTokenPurchase(msg.sender, msg.value, tokenAmount, referrer);
@@ -692,17 +693,70 @@ contract FangToken is ERC20Interface, Ownable{
     }
     
     /**
-     * @dev Estimate buy numbers
+     * @dev Calculate buy numbers
      */
-    function estimateBuy(uint256 value, bool hasReferrer) public view returns(uint256 tokens, uint256 referrerValue, uint256 totalDividendIncrease, uint256 operatingIncrease, uint256 treasuryIncrease) {
-      //return (_pool.status, _pool.total, _pool.floor, _pool.ceiling, _pool.operatingTotal, _pool.treasuryTotal, _pool.sellAllowed);
+    function estimateBuy(uint256 value, bool hasReferrer) public view returns(uint256 tokens, uint256 referrerValue, uint256 totalDividendIncrease, uint256 operatingIncrease, uint256 treasuryIncrease, uint256 poolIncrease) {
+        uint256 tokenAmount; 
+        uint256 referralDividend;
+        uint256 actualTokenHolderDividend;
+        uint256 operatingCut;
+        uint256 treasuryCut;
+        uint256 poolIncreaseAmt;
+        
+         /*
+        Dividends
+       */
+      uint256 totalDividend = calculateTotalDividend(value);
+
+      if(hasReferrer)
+      {
+        referralDividend = calculateReferralDividend(totalDividend); 
+      }
+
+      actualTokenHolderDividend = totalDividend.sub(referralDividend);
+
+     /*
+        Tokens
+      */
+      
+      operatingCut = calculateOperatingCut(value);
+
+      treasuryCut = calculateTreasuryCut(value);
+
+      poolIncreaseAmt = calculatePoolIncrease(value, totalDividend, operatingCut, treasuryCut);
+
+      // Determine how many tokens can be bought
+      tokenAmount = poolIncreaseAmt.div(_currentPrice);
+      require(_balances[_tokenAccount] > tokenAmount, "Not enough tokens available for sale.");
+      require(poolIncreaseAmt >= _currentPrice, "Amount must be greater than or equal to the token price.");
+        
+      return (tokenAmount, referralDividend, actualTokenHolderDividend, operatingCut, treasuryCut, poolIncreaseAmt);
     }
     
-    /**
-     * @dev Estimate buy numbers
-     */
-    function calculateBuy(uint256 value, bool hasReferrer) private returns(uint256 tokens, uint256 referrerValue, uint256 totalDividendIncrease, uint256 operatingIncrease, uint256 treasuryIncrease) {
-      //return (_pool.status, _pool.total, _pool.floor, _pool.ceiling, _pool.operatingTotal, _pool.treasuryTotal, _pool.sellAllowed);
+    
+    function calculateTotalDividend(uint256 valueIn) private view returns(uint256 valueOut)
+    {
+        return(valueIn.div(divideByPercent(_tokenHolderDividend)));
+    }
+    
+    function calculateReferralDividend(uint256 valueIn) private view returns(uint256 valueOut)
+    {
+        return(valueIn.div(divideByPercent(_referrerDividend)));
+    }
+    
+    function calculatePoolIncrease(uint256 valueIn, uint256 valueSubDividends, uint256 valueSubOperating, uint256 valueSubTreasury) private pure returns(uint256 valueOut)
+    {
+        return(valueIn.sub(valueSubDividends).sub(valueSubOperating).sub(valueSubTreasury));
+    }
+    
+    function calculateOperatingCut(uint256 valueIn) private view returns(uint256 valueOut)
+    {
+        return(valueIn.div(divideByPercent(_pool.operatingPercent)));
+    }
+    
+    function calculateTreasuryCut(uint256 valueIn) private view returns(uint256 valueOut)
+    {
+        return(valueIn.div(divideByPercent(_pool.treasuryPercent)));
     }
 
     /**
@@ -711,7 +765,7 @@ contract FangToken is ERC20Interface, Ownable{
      * @return An uint256 representing number of dividends currently owed to the address.
      */
     function dividendBalanceOf(address account) public view returns (uint256) {
-      uint256 newDividends = _totalDividends.sub(accounts[account].lastDividends);
+      uint256 newDividends = _pool.totalDividends.sub(accounts[account].lastDividends);
       uint256 product = _balances[account].mul(newDividends);
       return product.div(_supply);
     }
@@ -734,7 +788,7 @@ contract FangToken is ERC20Interface, Ownable{
       uint256 owing = dividendBalanceOf(sender);
       if (owing > 0) {
         sender.transfer(owing);
-        accounts[sender].lastDividends = _totalDividends;
+        accounts[sender].lastDividends = _pool.totalDividends;
         emit onClaimDividend(sender, owing);
       }
     }
@@ -754,7 +808,7 @@ contract FangToken is ERC20Interface, Ownable{
       claimDividendByAddress(msg.sender);
 
       uint256 holderDividend = ethValue.div(divideByPercent(_tokenHolderDividend));
-      _totalDividends = _totalDividends.add(holderDividend);
+      _pool.totalDividends = _pool.totalDividends.add(holderDividend);
       uint256 ethValueLeftAfterDividend = ethValue.sub(holderDividend);
 
       require(tokenAmount <= _balances[_tokenAccount], "Cannot sell more than the balance.");
