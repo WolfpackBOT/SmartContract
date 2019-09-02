@@ -562,8 +562,9 @@ contract FangToken is ERC20Interface, Ownable{
      * @param ethToSpend Amount of ETH to spend.
      */
     function calculateTokensReceived(uint256 ethToSpend) public view returns(uint256) {
-      uint256 totalDividend = ethToSpend.div(divideByPercent(_tokenHolderDividend));
-      uint256 ethValueLeftForPurchase = ethToSpend.sub(totalDividend);
+      uint256 actualInitialEth = SafeMath.mul(ethToSpend, 1 ether);
+      uint256 totalDividend = actualInitialEth.div(divideByPercent(_tokenHolderDividend));
+      uint256 ethValueLeftForPurchase = actualInitialEth.sub(totalDividend);
       return ethValueLeftForPurchase.div(_currentPrice);
     }
 
