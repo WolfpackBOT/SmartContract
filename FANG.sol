@@ -152,8 +152,8 @@ contract FangToken is ERC20Interface, Ownable{
       uint256 floor;
       uint256 ceiling;
       uint256 total;
-      uint256 insurancePercent;
-      uint256 insuranceTotal;
+      uint256 operatingPercent;
+      uint256 operatingTotal;
       uint256 treasuryPercent;
       uint256 treasuryTotal;
     }
@@ -233,7 +233,7 @@ contract FangToken is ERC20Interface, Ownable{
         require(_initialFloor < _initialCeiling, "Ceiling must be greater than the floor.");
         _pool.floor = _initialFloor;
         _pool.ceiling = _initialCeiling;
-        _pool.insurancePercent = 10;
+        _pool.operatingPercent = 10;
         _pool.treasuryPercent = 10;
     }
 
@@ -314,8 +314,8 @@ contract FangToken is ERC20Interface, Ownable{
      * @dev Gets the current pool information.
      * @return Properties related to the pool information.
      */
-    function getPoolInfo() public view returns (uint status, uint256 total, uint256 floor, uint256 ceiling, uint256 insuranceTotal, uint256 treasuryTotal, bool sellAllowed){
-        return (_pool.status, _pool.total, _pool.floor, _pool.ceiling, _pool.insuranceTotal, _pool.treasuryTotal, _pool.sellAllowed);
+    function getPoolInfo() public view returns (uint status, uint256 total, uint256 floor, uint256 ceiling, uint256 operatingTotal, uint256 treasuryTotal, bool sellAllowed){
+        return (_pool.status, _pool.total, _pool.floor, _pool.ceiling, _pool.operatingTotal, _pool.treasuryTotal, _pool.sellAllowed);
     }
 
     /**
@@ -601,24 +601,33 @@ contract FangToken is ERC20Interface, Ownable{
     }
 
     /**
-     * @dev Withdraw insurance. OnlyOwner
+     * @dev Withdraw operating. OnlyOwner
      */
-    function withdrawInsurance() public onlyOwner {
+    function withdrawOperatingBalance() public onlyOwner {
         address payable owner = owner();
-        owner.transfer(_pool.insuranceTotal);
-        _pool.insuranceTotal = 0;
-        // TODO: need event for withdrawing insurance
+        owner.transfer(_pool.operatingTotal);
+        _pool.operatingTotal = 0;
+        // TODO: need event for withdrawing operating
         //emit Transfer(address(0), owner(), amount);
     }
 
     /**
      * @dev Withdraw treasury. OnlyOwner
      */
-    function withdrawTreasury() public onlyOwner {
+    function withdrawTreasuryBalance() public onlyOwner {
         address payable owner = owner();
         owner.transfer(_pool.treasuryTotal);
         _pool.treasuryTotal = 0;
-        // TODO: need event for withdrawing insurance
+        // TODO: need event for withdrawing treasury
+        //emit Transfer(address(0), owner(), amount);
+    }
+    
+    /**
+     * @dev Fund Total dividends.  "Rain on holders propertionally."
+     */
+    function fundTotalDividends() public payable {
+        _totalDividends = _totalDividends.add(msg.value);
+        // TODO: need event for funding dividends
         //emit Transfer(address(0), owner(), amount);
     }
 
@@ -662,13 +671,13 @@ contract FangToken is ERC20Interface, Ownable{
       _balances[msg.sender] = _balances[msg.sender].add(tokenAmount);
       _balances[_tokenAccount] = _balances[_tokenAccount].sub(tokenAmount);
 
-      uint256 insuranceCut = msg.value.div(divideByPercent(_pool.insurancePercent));
-      _pool.insuranceTotal = _pool.insuranceTotal.add(insuranceCut);
+      uint256 operatingCut = msg.value.div(divideByPercent(_pool.operatingPercent));
+      _pool.operatingTotal = _pool.operatingTotal.add(operatingCut);
 
       uint256 treasuryCut = msg.value.div(divideByPercent(_pool.treasuryPercent));
       _pool.treasuryTotal = _pool.treasuryTotal.add(treasuryCut);
 
-      ethValueLeftForPurchase = ethValueLeftForPurchase.sub(insuranceCut).sub(treasuryCut);
+      ethValueLeftForPurchase = ethValueLeftForPurchase.sub(operatingCut).sub(treasuryCut);
 
       // Update pool data
       updatePoolState(ethValueLeftForPurchase, true);
@@ -680,6 +689,20 @@ contract FangToken is ERC20Interface, Ownable{
       _currentPrice = _currentPrice.add(_increment.mul(tokenAmount));
 
       return true;
+    }
+    
+    /**
+     * @dev Estimate buy numbers
+     */
+    function estimateBuy(uint256 value, bool hasReferrer) public view returns(uint256 tokens, uint256 referrerValue, uint256 totalDividendIncrease, uint256 operatingIncrease, uint256 treasuryIncrease) {
+      //return (_pool.status, _pool.total, _pool.floor, _pool.ceiling, _pool.operatingTotal, _pool.treasuryTotal, _pool.sellAllowed);
+    }
+    
+    /**
+     * @dev Estimate buy numbers
+     */
+    function calculateBuy(uint256 value, bool hasReferrer) private returns(uint256 tokens, uint256 referrerValue, uint256 totalDividendIncrease, uint256 operatingIncrease, uint256 treasuryIncrease) {
+      //return (_pool.status, _pool.total, _pool.floor, _pool.ceiling, _pool.operatingTotal, _pool.treasuryTotal, _pool.sellAllowed);
     }
 
     /**
