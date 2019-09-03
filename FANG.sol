@@ -103,7 +103,7 @@ contract Freezable is Ownable {
   * @dev Allows the owner to freeze an address
   * @param account is the address used by the function to freeze
   */
-        function freezeAddress(address account) private onlyOwner {
+        function freezeAddress(address account) public onlyOwner {
             require(_frozen[account] == false, "Freezable: Account already frozen, unable to freeze.");
             _frozen[account] = true;
         }
@@ -112,7 +112,7 @@ contract Freezable is Ownable {
   * @dev Allows the owner to unfreeze an address
   * @param account is the address used by the function to unfreeze
   */
-        function unfreezeAddress(address account) private onlyOwner {
+        function unfreezeAddress(address account) public onlyOwner {
             require(_frozen[account] == true, "Freezable: Account not frozen, unable to unfreeze.");
             _frozen[account] = false;
         }
