@@ -469,18 +469,18 @@ contract FangToken is ERC20Interface, Ownable, Pausable, Freezable{
      * @param to address The address which you want to transfer to
      * @param value uint256 the amount of tokens to be transferred
      */
-    function transferFrom(address from, address to, uint256 value) public whenNotPaused blockFrozen(msg.sender) returns (bool) {
+    function transferFrom(address from, address to, uint256 value) public whenNotPaused blockFrozen(from) blockFrozen(to) returns (bool) {
         if (value == 0) {
           return false;
         }
 
         uint256 fromBalance = _balances[from];
         uint256 currentAllowance = _allowed[from][msg.sender];
-        bool sufficientFunds = fromBalance <= value;
-        bool sufficientAllowance = currentAllowance <= value;
-        bool overflowed = _balances[to] + value > _balances[to];
+        //bool sufficientFunds = fromBalance <= value;
+        //bool sufficientAllowance = currentAllowance <= value;
+        bool overflowed = _balances[to].add(value) > _balances[to];
 
-        if (sufficientFunds && sufficientAllowance && !overflowed) {
+        if ((fromBalance <= value) && (currentAllowance <= value) && !overflowed) {
             _balances[to] += value;
             _balances[from] -= value;
 
@@ -550,7 +550,7 @@ contract FangToken is ERC20Interface, Ownable, Pausable, Freezable{
      * @param amount uint256 the amount of tokens to be transferred.
      * @return Bool success
      */
-    function transfer(address recipient, uint256 amount) public whenNotPaused blockFrozen(msg.sender) returns (bool) {
+    function transfer(address recipient, uint256 amount) public whenNotPaused blockFrozen(msg.sender) blockFrozen(recipient) returns (bool) {
         address sender = msg.sender;
         require(sender != address(0), "Send cannot be empty.");
         require(recipient != address(0), "Recipient cannot be empty.");
