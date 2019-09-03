@@ -99,6 +99,14 @@ contract Ownable {
 contract Freezable is Ownable {
     mapping (address => bool) _frozen;
     
+      event AddressFrozen(
+        address Address
+      );
+  
+      event AddressUnfrozen(
+        address Address
+      );
+    
     /**
   * @dev Allows the owner to freeze an address
   * @param account is the address used by the function to freeze
@@ -106,6 +114,7 @@ contract Freezable is Ownable {
         function freezeAddress(address account) public onlyOwner {
             require(_frozen[account] == false, "Freezable: Account already frozen, unable to freeze.");
             _frozen[account] = true;
+            emit AddressFrozen(account);
         }
     
         /**
@@ -115,6 +124,7 @@ contract Freezable is Ownable {
         function unfreezeAddress(address account) public onlyOwner {
             require(_frozen[account] == true, "Freezable: Account not frozen, unable to unfreeze.");
             _frozen[account] = false;
+            emit AddressUnfrozen(account);
         }
     
         /**
@@ -124,13 +134,12 @@ contract Freezable is Ownable {
         return _frozen[account];
       }
       
-      /**
-  * @dev Throws if called by any account other than the owner.
-  */
-  modifier blockFrozen(address account) {
-    require(!isFrozen(account), "Frozen account.");
-    _;
-  }
+     /**
+      * @return if the address is frozen
+      */
+      function requireUnfrozen(address account) internal view returns(bool) {
+        require(!isFrozen(account), "Address involved in transaction is frozen.");
+      }
 }
 
 /**
@@ -469,10 +478,13 @@ contract FangToken is ERC20Interface, Ownable, Pausable, Freezable{
      * @param to address The address which you want to transfer to
      * @param value uint256 the amount of tokens to be transferred
      */
-    function transferFrom(address from, address to, uint256 value) public whenNotPaused blockFrozen(from) blockFrozen(to) returns (bool) {
+    function transferFrom(address from, address to, uint256 value) public whenNotPaused returns (bool) {
         if (value == 0) {
           return false;
         }
+        
+        requireUnfrozen(from);
+        requireUnfrozen(to);
 
         uint256 fromBalance = _balances[from];
         uint256 currentAllowance = _allowed[from][msg.sender];
@@ -502,7 +514,9 @@ contract FangToken is ERC20Interface, Ownable, Pausable, Freezable{
      * @param spender The address which will spend the funds.
      * @param addedValue The amount of tokens to increase the allowance by.
      */
-    function increaseAllowance(address spender, uint256 addedValue) public whenNotPaused blockFrozen(msg.sender) returns (bool) {
+    function increaseAllowance(address spender, uint256 addedValue) public whenNotPaused returns (bool) {
+        requireUnfrozen(msg.sender);
+        requireUnfrozen(spender);
         _approve(msg.sender, spender, _allowed[msg.sender][spender].add(addedValue));
         return true;
     }
@@ -517,7 +531,9 @@ contract FangToken is ERC20Interface, Ownable, Pausable, Freezable{
      * @param spender The address which will spend the funds.
      * @param subtractedValue The amount of tokens to decrease the allowance by.
      */
-    function decreaseAllowance(address spender, uint256 subtractedValue) public whenNotPaused blockFrozen(msg.sender) returns (bool) {
+    function decreaseAllowance(address spender, uint256 subtractedValue) public whenNotPaused returns (bool) {
+        requireUnfrozen(msg.sender);
+        requireUnfrozen(spender);
         _approve(msg.sender, spender, _allowed[msg.sender][spender].sub(subtractedValue));
         return true;
     }
@@ -531,7 +547,9 @@ contract FangToken is ERC20Interface, Ownable, Pausable, Freezable{
      * @param spender The address which will spend the funds.
      * @param value The amount of tokens to be spent.
      */
-    function approve(address spender, uint256 value) public whenNotPaused blockFrozen(msg.sender) returns (bool) {
+    function approve(address spender, uint256 value) public whenNotPaused returns (bool) {
+        requireUnfrozen(msg.sender);
+        requireUnfrozen(spender);
         _approve(msg.sender, spender, value);
         return true;
     }
@@ -550,7 +568,9 @@ contract FangToken is ERC20Interface, Ownable, Pausable, Freezable{
      * @param amount uint256 the amount of tokens to be transferred.
      * @return Bool success
      */
-    function transfer(address recipient, uint256 amount) public whenNotPaused blockFrozen(msg.sender) blockFrozen(recipient) returns (bool) {
+    function transfer(address recipient, uint256 amount) public whenNotPaused  returns (bool) {
+        requireUnfrozen(msg.sender);
+        requireUnfrozen(recipient);
         address sender = msg.sender;
         require(sender != address(0), "Send cannot be empty.");
         require(recipient != address(0), "Recipient cannot be empty.");
@@ -767,7 +787,8 @@ contract FangToken is ERC20Interface, Ownable, Pausable, Freezable{
      * @param referrer Address of the referrer.
      * @return Bool success
      */
-    function buy(address payable referrer) public payable whenNotPaused blockFrozen(msg.sender) returns (bool) {
+    function buy(address payable referrer) public payable whenNotPaused returns (bool) {
+        requireUnfrozen(msg.sender);
       require(msg.sender != referrer, "Buyer and referrer cannot be the same.");
       claimDividendByAddress(msg.sender);
 
@@ -856,14 +877,18 @@ contract FangToken is ERC20Interface, Ownable, Pausable, Freezable{
 
       poolIncreaseAmt = calculatePoolIncrease(value, totalDividend, operatingCut, treasuryCut);
 
-      // Determine how many tokens can be bought
-      tokenAmount = poolIncreaseAmt.div(_currentPrice);
+      // Determine how many tokens can be bought with original value
+      tokenAmount = calculateTokenAmount(value);
       require(_balances[_tokenAccount] > tokenAmount, "Not enough tokens available for sale.");
       require(poolIncreaseAmt >= _currentPrice, "Amount must be greater than or equal to the token price.");
         
       return (tokenAmount, referralDividend, actualTokenHolderDividend, operatingCut, treasuryCut, poolIncreaseAmt);
     }
     
+    function calculateTokenAmount(uint256 valueIn) private view returns(uint256 valueOut)
+    {
+        return(valueIn.div(_currentPrice));
+    }
     
     function calculateTotalDividend(uint256 valueIn) private view returns(uint256 valueOut)
     {
@@ -904,7 +929,8 @@ contract FangToken is ERC20Interface, Ownable, Pausable, Freezable{
     /**
      * @dev Claim the currently owed dividends.
      */
-    function claimDividend() whenNotPaused blockFrozen(msg.sender) public {
+    function claimDividend() whenNotPaused public {
+        requireUnfrozen(msg.sender);
       claimDividendCore(msg.sender);
     }
 
@@ -929,7 +955,8 @@ contract FangToken is ERC20Interface, Ownable, Pausable, Freezable{
      * @param tokenAmount Amount of tokens to sell.
      * @return Bool success
      */
-    function sell(uint256 tokenAmount) public whenNotPaused blockFrozen(msg.sender) returns (bool) {
+    function sell(uint256 tokenAmount) public whenNotPaused returns (bool) {
+        requireUnfrozen(msg.sender);
       require(_pool.sellAllowed, "Sell is not yet allowed.");
       require(tokenAmount > 0, "Must sell an amount greater than 0.");
 
@@ -973,7 +1000,8 @@ contract FangToken is ERC20Interface, Ownable, Pausable, Freezable{
      * @param to The address to transfer to.
      * @param value The amount to be transferred.
      */
-    function _transfer(address from, address to, uint256 value) whenNotPaused blockFrozen(msg.sender) internal {
+    function _transfer(address from, address to, uint256 value) whenNotPaused internal {
+        requireUnfrozen(msg.sender);
         require(to != address(0), "To address cannot be empty.");
 
         _balances[from] = _balances[from].sub(value);
@@ -984,7 +1012,8 @@ contract FangToken is ERC20Interface, Ownable, Pausable, Freezable{
     /**
      * @dev Alias to sell and claim all dividends
      */
-    function exit() public whenNotPaused blockFrozen(msg.sender) {
+    function exit() public whenNotPaused {
+        requireUnfrozen(msg.sender);
         uint256 _tokens = _balances[msg.sender];
         if(_tokens > 0) {
           sell(_tokens);
@@ -999,7 +1028,10 @@ contract FangToken is ERC20Interface, Ownable, Pausable, Freezable{
      * @param spender The address that will spend the tokens.
      * @param value The number of tokens that can be spent.
      */
-    function _approve(address owner, address spender, uint256 value) whenNotPaused blockFrozen(msg.sender) internal {
+    function _approve(address owner, address spender, uint256 value) whenNotPaused internal {
+        requireUnfrozen(msg.sender);
+        requireUnfrozen(owner);
+        requireUnfrozen(spender);
         require(spender != address(0), "Spender address cannot be empty.");
         require(owner != address(0), "Owner address cannot be empty.");
 
