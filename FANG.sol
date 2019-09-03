@@ -209,11 +209,28 @@ contract FangToken is ERC20Interface, Ownable{
         address indexed customerAddress,
         uint256 ethereumWithdrawn
     );
+    
+    event onDividendIncrease(
+        uint256 totalDividendIncrease
+    );
+    
+    event onOperatingWithdraw(
+        uint256 totalWithdraw
+    );
+    
+    event onTreasuryWithdraw(
+        uint256 totalWithdraw
+    );
+    
+    event onSellEnabledChange(
+        bool enabled
+    );
+
 
     constructor(uint256 _initialFloor, uint256 _initialCeiling, uint256 _tokenAccountSupply) public {
         _name = "FANG-WPB";
         _symbol = "FANG";
-        _decimals = 18;
+        _decimals = 0;
         _supply = 3000000000;
         _poolAccount = address(0x14723A09ACff6D2A60DcdF7aA4AFf308FDDC160C);
         _tokenAccount = address(0x4B0897b0513fdC7C541B6d9D7E929C4e5364D2dB);
@@ -549,11 +566,13 @@ contract FangToken is ERC20Interface, Ownable{
         if(_pool.sellAllowed && _pool.total <= _pool.floor)
         {
             _pool.sellAllowed = false;
+            emit onSellEnabledChange(_pool.sellAllowed);
         }
         // If selling wasn't allowed, turn it back on if >= ceiling
         else if(!_pool.sellAllowed && _pool.total >= _pool.ceiling)
         {
             _pool.sellAllowed = true;
+            emit onSellEnabledChange(_pool.sellAllowed);
         }
     }
 
@@ -606,9 +625,8 @@ contract FangToken is ERC20Interface, Ownable{
     function withdrawOperatingBalance() public onlyOwner {
         address payable owner = owner();
         owner.transfer(_pool.operatingTotal);
+        emit onOperatingWithdraw(_pool.operatingTotal);
         _pool.operatingTotal = 0;
-        // TODO: need event for withdrawing operating
-        //emit Transfer(address(0), owner(), amount);
     }
 
     /**
@@ -617,18 +635,24 @@ contract FangToken is ERC20Interface, Ownable{
     function withdrawTreasuryBalance() public onlyOwner {
         address payable owner = owner();
         owner.transfer(_pool.treasuryTotal);
+        emit onTreasuryWithdraw(_pool.operatingTotal);
         _pool.treasuryTotal = 0;
-        // TODO: need event for withdrawing treasury
-        //emit Transfer(address(0), owner(), amount);
     }
     
     /**
      * @dev Fund Total dividends.  "Rain on holders propertionally."
      */
     function fundTotalDividends() public payable {
-        _pool.totalDividends = _pool.totalDividends.add(msg.value);
-        // TODO: need event for funding dividends
-        //emit Transfer(address(0), owner(), amount);
+        increaseTotalDividends(msg.value);
+        emit onDividendIncrease(msg.value);
+    }
+    
+    /**
+     * @dev Fund Total dividends.  "Rain on holders propertionally."
+     */
+    function increaseTotalDividends(uint256 value) private {
+        _pool.totalDividends = _pool.totalDividends.add(value);
+        emit onDividendIncrease(value);
     }
 
     /**
@@ -673,7 +697,7 @@ contract FangToken is ERC20Interface, Ownable{
 
       _pool.treasuryTotal = _pool.treasuryTotal.add(treasuryCut);
       
-      _pool.totalDividends = _pool.totalDividends.add(actualTokenHolderDividend);
+      increaseTotalDividends(actualTokenHolderDividend);
       
       updatePoolState(poolIncrease, true);
       
@@ -808,7 +832,7 @@ contract FangToken is ERC20Interface, Ownable{
       claimDividendByAddress(msg.sender);
 
       uint256 holderDividend = ethValue.div(divideByPercent(_tokenHolderDividend));
-      _pool.totalDividends = _pool.totalDividends.add(holderDividend);
+      increaseTotalDividends(holderDividend);
       uint256 ethValueLeftAfterDividend = ethValue.sub(holderDividend);
 
       require(tokenAmount <= _balances[_tokenAccount], "Cannot sell more than the balance.");
