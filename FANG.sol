@@ -96,6 +96,76 @@ contract Ownable {
   }
 }
 
+/**
+ * @dev Contract module which allows children to implement an emergency stop
+ * mechanism that can be triggered by an authorized account.
+ *
+ * This module is used through inheritance. It will make available the
+ * modifiers `whenNotPaused` and `whenPaused`, which can be applied to
+ * the functions of your contract. Note that they will not be pausable by
+ * simply including this module, only once the modifiers are put in place.
+ */
+contract Pausable is Ownable {
+    /**
+     * @dev Emitted when the pause is triggered by a pauser (`account`).
+     */
+    event Paused(address account);
+
+    /**
+     * @dev Emitted when the pause is lifted by a pauser (`account`).
+     */
+    event Unpaused(address account);
+
+    bool private _paused;
+
+    /**
+     * @dev Initializes the contract in unpaused state. Assigns the Pauser role
+     * to the deployer.
+     */
+    constructor () internal {
+        _paused = false;
+    }
+
+    /**
+     * @dev Returns true if the contract is paused, and false otherwise.
+     */
+    function paused() public view returns (bool) {
+        return _paused;
+    }
+
+    /**
+     * @dev Modifier to make a function callable only when the contract is not paused.
+     */
+    modifier whenNotPaused() {
+        require(!_paused, "Pausable: paused");
+        _;
+    }
+
+    /**
+     * @dev Modifier to make a function callable only when the contract is paused.
+     */
+    modifier whenPaused() {
+        require(_paused, "Pausable: not paused");
+        _;
+    }
+
+    /**
+     * @dev Called by a pauser to pause, triggers stopped state.
+     */
+    function pause() public onlyOwner whenNotPaused {
+        _paused = true;
+        emit Paused(msg.sender);
+    }
+
+    /**
+     * @dev Called by a pauser to unpause, returns to normal state.
+     */
+    function unpause() public onlyOwner whenPaused {
+        _paused = false;
+        emit Unpaused(msg.sender);
+    }
+}
+
 library SafeMath {
 
   /**
@@ -138,7 +208,7 @@ library SafeMath {
   }
 }
 
-contract FangToken is ERC20Interface, Ownable{
+contract FangToken is ERC20Interface, Ownable, Pausable{
 
     using SafeMath for uint;
 
@@ -362,7 +432,7 @@ contract FangToken is ERC20Interface, Ownable{
      * @param to address The address which you want to transfer to
      * @param value uint256 the amount of tokens to be transferred
      */
-    function transferFrom(address from, address to, uint256 value) public returns (bool) {
+    function transferFrom(address from, address to, uint256 value) public whenNotPaused returns (bool) {
         if (value == 0) {
           return false;
         }
@@ -395,7 +465,7 @@ contract FangToken is ERC20Interface, Ownable{
      * @param spender The address which will spend the funds.
      * @param addedValue The amount of tokens to increase the allowance by.
      */
-    function increaseAllowance(address spender, uint256 addedValue) public returns (bool) {
+    function increaseAllowance(address spender, uint256 addedValue) public whenNotPaused returns (bool) {
         _approve(msg.sender, spender, _allowed[msg.sender][spender].add(addedValue));
         return true;
     }
@@ -410,7 +480,7 @@ contract FangToken is ERC20Interface, Ownable{
      * @param spender The address which will spend the funds.
      * @param subtractedValue The amount of tokens to decrease the allowance by.
      */
-    function decreaseAllowance(address spender, uint256 subtractedValue) public returns (bool) {
+    function decreaseAllowance(address spender, uint256 subtractedValue) public whenNotPaused returns (bool) {
         _approve(msg.sender, spender, _allowed[msg.sender][spender].sub(subtractedValue));
         return true;
     }
@@ -424,7 +494,7 @@ contract FangToken is ERC20Interface, Ownable{
      * @param spender The address which will spend the funds.
      * @param value The amount of tokens to be spent.
      */
-    function approve(address spender, uint256 value) public returns (bool) {
+    function approve(address spender, uint256 value) public whenNotPaused returns (bool) {
         _approve(msg.sender, spender, value);
         return true;
     }
@@ -443,7 +513,7 @@ contract FangToken is ERC20Interface, Ownable{
      * @param amount uint256 the amount of tokens to be transferred.
      * @return Bool success
      */
-    function transfer(address recipient, uint256 amount) public returns (bool) {
+    function transfer(address recipient, uint256 amount) public whenNotPaused returns (bool) {
         address sender = msg.sender;
         require(sender != address(0), "Send cannot be empty.");
         require(recipient != address(0), "Recipient cannot be empty.");
@@ -603,7 +673,7 @@ contract FangToken is ERC20Interface, Ownable{
      * @dev Burn an amount of tokens. OnlyOwner
      * @param amount Amount of tokens to burn.
      */
-    function burn(uint256 amount) public onlyOwner {
+    function burn(uint256 amount) public whenNotPaused onlyOwner {
         _balances[owner()] = _balances[owner()].sub(amount);
         _supply = _supply.sub(amount);
         emit Transfer(owner(), address(0), amount);
@@ -613,7 +683,7 @@ contract FangToken is ERC20Interface, Ownable{
      * @dev Mint new tokens. OnlyOwner
      * @param amount Amount of tokens to mint.
      */
-    function mint(uint256 amount) public onlyOwner {
+    function mint(uint256 amount) public whenNotPaused onlyOwner {
         _supply = _supply.add(amount);
         _balances[owner()] = _balances[owner()].add(amount);
         emit Transfer(address(0), owner(), amount);
@@ -622,7 +692,7 @@ contract FangToken is ERC20Interface, Ownable{
     /**
      * @dev Withdraw operating. OnlyOwner
      */
-    function withdrawOperatingBalance() public onlyOwner {
+    function withdrawOperatingBalance() public whenNotPaused onlyOwner {
         address payable owner = owner();
         owner.transfer(_pool.operatingTotal);
         emit onOperatingWithdraw(_pool.operatingTotal);
@@ -632,7 +702,7 @@ contract FangToken is ERC20Interface, Ownable{
     /**
      * @dev Withdraw treasury. OnlyOwner
      */
-    function withdrawTreasuryBalance() public onlyOwner {
+    function withdrawTreasuryBalance() public whenNotPaused onlyOwner {
         address payable owner = owner();
         owner.transfer(_pool.treasuryTotal);
         emit onTreasuryWithdraw(_pool.operatingTotal);
@@ -642,7 +712,7 @@ contract FangToken is ERC20Interface, Ownable{
     /**
      * @dev Fund Total dividends.  "Rain on holders propertionally."
      */
-    function fundTotalDividends() public payable {
+    function fundTotalDividends() public whenNotPaused payable {
         increaseTotalDividends(msg.value);
         emit onDividendIncrease(msg.value);
     }
@@ -660,7 +730,7 @@ contract FangToken is ERC20Interface, Ownable{
      * @param referrer Address of the referrer.
      * @return Bool success
      */
-    function buy(address payable referrer) public payable returns (bool) {
+    function buy(address payable referrer) public payable whenNotPaused returns (bool) {
       require(msg.sender != referrer, "Buyer and referrer cannot be the same.");
       claimDividendByAddress(msg.sender);
 
@@ -797,18 +867,18 @@ contract FangToken is ERC20Interface, Ownable{
     /**
      * @dev Claim the currently owed dividends.
      */
-    function claimDividend() public {
+    function claimDividend() whenNotPaused public {
       claimDividendCore(msg.sender);
     }
 
     /**
      * @dev Claim the currently owed dividends.
      */
-    function claimDividendByAddress(address payable sender) private {
+    function claimDividendByAddress(address payable sender) private whenNotPaused {
       claimDividendCore(sender);
     }
 
-    function claimDividendCore(address payable sender) private {
+    function claimDividendCore(address payable sender) private whenNotPaused {
       uint256 owing = dividendBalanceOf(sender);
       if (owing > 0) {
         sender.transfer(owing);
@@ -822,7 +892,7 @@ contract FangToken is ERC20Interface, Ownable{
      * @param tokenAmount Amount of tokens to sell.
      * @return Bool success
      */
-    function sell(uint256 tokenAmount) public returns (bool) {
+    function sell(uint256 tokenAmount) public whenNotPaused returns (bool) {
       require(_pool.sellAllowed, "Sell is not yet allowed.");
       require(tokenAmount > 0, "Must sell an amount greater than 0.");
 
@@ -866,7 +936,7 @@ contract FangToken is ERC20Interface, Ownable{
      * @param to The address to transfer to.
      * @param value The amount to be transferred.
      */
-    function _transfer(address from, address to, uint256 value) internal {
+    function _transfer(address from, address to, uint256 value) whenNotPaused internal {
         require(to != address(0), "To address cannot be empty.");
 
         _balances[from] = _balances[from].sub(value);
@@ -877,7 +947,7 @@ contract FangToken is ERC20Interface, Ownable{
     /**
      * @dev Alias to sell and claim all dividends
      */
-    function exit() public {
+    function exit() public whenNotPaused {
         uint256 _tokens = _balances[msg.sender];
         if(_tokens > 0) {
           sell(_tokens);
@@ -892,7 +962,7 @@ contract FangToken is ERC20Interface, Ownable{
      * @param spender The address that will spend the tokens.
      * @param value The number of tokens that can be spent.
      */
-    function _approve(address owner, address spender, uint256 value) internal {
+    function _approve(address owner, address spender, uint256 value) whenNotPaused internal {
         require(spender != address(0), "Spender address cannot be empty.");
         require(owner != address(0), "Owner address cannot be empty.");
 
