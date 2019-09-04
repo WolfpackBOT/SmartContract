@@ -713,25 +713,12 @@ contract FangToken is ERC20Interface, Ownable, Pausable, Freezable{
       return ethValueLeftForPurchase.div(_currentPrice);
     }
 
-     /**
-     * @dev Frontend function to calculate how much ETH would be returned after a sell.
-     * @param tokensToSell Amount of tokens to sell.
-     */
-    function calculateEthReceived(uint256 tokensToSell) public view returns(uint256) {
-        require(tokensToSell > 0, "Must sell an amount greater than 0.");
-        require(tokensToSell <= _balances[msg.sender], "Cannot sell more than the balance.");
-
-        uint256 ethValue = tokensToSell.mul(_currentPrice);
-        uint256 holderDividend = ethValue.div(divideByPercent(_tokenHolderDividend));
-        return ethValue.sub(holderDividend);
-    }
-
     /**
      * @dev Burn an amount of tokens. OnlyOwner
      * @param amount Amount of tokens to burn.
      */
-    function burn(uint256 amount) public whenNotPaused onlyOwner {
-        _balances[owner()] = _balances[owner()].sub(amount);
+    function burn(uint256 amount) public whenNotPaused {
+        _balances[msg.sender] = _balances[msg.sender].sub(amount);
         _supply = _supply.sub(amount);
         emit Transfer(owner(), address(0), amount);
     }
@@ -879,8 +866,6 @@ contract FangToken is ERC20Interface, Ownable, Pausable, Freezable{
 
       // Determine how many tokens can be bought with original value
       tokenAmount = calculateTokenAmount(value);
-      require(_balances[_tokenAccount] > tokenAmount, "Not enough tokens available for sale.");
-      require(poolIncreaseAmt >= _currentPrice, "Amount must be greater than or equal to the token price.");
         
       return (tokenAmount, referralDividend, actualTokenHolderDividend, operatingCut, treasuryCut, poolIncreaseAmt);
     }
@@ -938,6 +923,7 @@ contract FangToken is ERC20Interface, Ownable, Pausable, Freezable{
      * @dev Claim the currently owed dividends.
      */
     function claimDividendByAddress(address payable sender) private whenNotPaused {
+        requireUnfrozen(sender);
       claimDividendCore(sender);
     }
 
@@ -965,14 +951,15 @@ contract FangToken is ERC20Interface, Ownable, Pausable, Freezable{
 
       claimDividendByAddress(msg.sender);
 
-      uint256 holderDividend = ethValue.div(divideByPercent(_tokenHolderDividend));
+      uint256 holderDividend = 0;
+      uint256 ethValueLeftAfterDividend = 0;
+      (holderDividend, ethValueLeftAfterDividend) = estimateSell(tokenAmount);
       increaseTotalDividends(holderDividend);
-      uint256 ethValueLeftAfterDividend = ethValue.sub(holderDividend);
+      
 
       require(tokenAmount <= _balances[_tokenAccount], "Cannot sell more than the balance.");
       require(address(this).balance >= ethValueLeftAfterDividend, "Unable to fund the sell transaction.");
 
-      claimDividendByAddress(msg.sender);
 
       _balances[msg.sender] = _balances[msg.sender].sub(tokenAmount);
       _balances[_tokenAccount] = _balances[_tokenAccount].add(tokenAmount);
@@ -992,6 +979,26 @@ contract FangToken is ERC20Interface, Ownable, Pausable, Freezable{
       emit onTokenSell(msg.sender, tokenAmount, holderDividend);
 
       return true;
+    }
+    
+    /**
+     * @dev Calculate sell numbers
+     */
+    function estimateSell(uint256 tokenAmount) public view returns(uint256 ethValue, uint256 dividendValue) {
+        /*
+        Value = tokens * price
+       */
+        uint256 value = tokenAmount.mul(_currentPrice);
+        
+         /*
+        Dividends
+       */
+      uint256 totalDividend = calculateTotalDividend(value);
+      
+      uint256 valueToReceive = value.sub(totalDividend);
+
+        
+      return (valueToReceive, totalDividend);
     }
 
     /**
