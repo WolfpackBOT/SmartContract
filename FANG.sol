@@ -450,8 +450,8 @@ contract FangToken is ERC20Interface, Ownable, Pausable, Freezable{
      * @dev Gets the current pool information.
      * @return Properties related to the pool information.
      */
-    function getPoolInfo() public view returns (uint status, uint256 total, uint256 floor, uint256 ceiling, uint256 operatingTotal, uint256 treasuryTotal, uint256 totalDividends, bool sellAllowed){
-        return (_pool.status, _pool.total, _pool.floor, _pool.ceiling, _pool.operatingTotal, _pool.treasuryTotal, _pool.totalDividends, _pool.sellAllowed);
+    function getPoolInfo() public view returns (uint256 total, uint256 floor, uint256 ceiling, uint256 operatingTotal, uint256 treasuryTotal, uint256 totalDividends, bool sellAllowed){
+        return (_pool.total, _pool.floor, _pool.ceiling, _pool.operatingTotal, _pool.treasuryTotal, _pool.totalDividends, _pool.sellAllowed);
     }
 
     /**
