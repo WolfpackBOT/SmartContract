@@ -258,44 +258,37 @@ contract FangToken is ERC20Interface, Ownable, Pausable, Freezable{
 
     using SafeMath for uint;
 
-    struct Account {
-      uint256 lastDividends;
-    }
-
     struct Pool {
       bool sellAllowed;
       uint256 floor;
       uint256 ceiling;
       uint256 total;
-      uint256 operatingPercent;
-      uint256 operatingTotal;
-      uint256 treasuryPercent;
-      uint256 treasuryTotal;
       uint256 totalDividends;
+      uint256 buyReferrerPercent;
+      uint256 buyHolderPercent;
+      uint256 sellHolderPercent;
+      uint256 buyMintOwnerPercent;
+      uint256 sellHoldOwnerPercent;
     }
 
     string private _name;
     string private _symbol;
     uint8 private _decimals;
     uint private _supply;
-    uint256 private _totalTokensBought;
-    uint256 private _totalTokensSold;
-    uint256 private _totalPayouts;
-    uint256 private _earningsPerShare;
+    uint256 private _totalTokensBought; // used?
+    uint256 private _totalTokensSold; // used?
+    uint256 private _totalPayouts; // used?
+    uint256 private _earningsPerShare; // used?
     uint256 private _currentPrice;
     uint256 private _increment;
     uint256 private _lowerCap;
     uint256 private _minimumEthSellAmount;
-    uint256 private _tokenHolderDividend;
-    uint256 private _referrerDividend;
     uint256 private _percentBase;
-    address payable private _poolAccount;
-    address payable private _tokenAccount;
 
     mapping(address => uint256) private _balances;
     mapping (address => mapping (address => uint256)) private _allowed;
-    mapping(address => uint256) payouts;
-    mapping (address => Account) accounts;
+    mapping(address => uint256) payouts;  // used?
+    mapping (address => uint256) _lastDividends;
 
     Pool private _pool;
 
@@ -329,13 +322,6 @@ contract FangToken is ERC20Interface, Ownable, Pausable, Freezable{
         uint256 totalDividendIncrease
     );
     
-    event onOperatingWithdraw(
-        uint256 totalWithdraw
-    );
-    
-    event onTreasuryWithdraw(
-        uint256 totalWithdraw
-    );
     
     event onSellEnabledChange(
         bool enabled
@@ -346,31 +332,29 @@ contract FangToken is ERC20Interface, Ownable, Pausable, Freezable{
     );
 
 
-    constructor(uint256 _initialFloor, uint256 _initialCeiling, uint256 _tokenAccountSupply) public {
+    constructor(uint256 _initialFloor, uint256 _initialCeiling) public {
         _name = "FANG-WPB";
         _symbol = "FANG";
         _decimals = 0;
-        _supply = 3000000000;
-        _poolAccount = address(0x14723A09ACff6D2A60DcdF7aA4AFf308FDDC160C);
-        _tokenAccount = address(0x4B0897b0513fdC7C541B6d9D7E929C4e5364D2dB);
+        _supply = 600000000;
         _currentPrice = .000053 ether;
         _increment = .000000001 ether;
         _lowerCap = .0000053 ether;
         _minimumEthSellAmount = .01 ether;
-        _tokenHolderDividend = 10; // this is a percentage
-        _referrerDividend = 30;// this is a percentage of tokenholder dividend
         _percentBase = 100; // _percentBase.div(uint256) will return a whole integer percentage value you can divide large numbers with
 
         // Give founder all supply
-        _balances[owner()] = _supply.sub(_tokenAccountSupply);
-        _balances[_tokenAccount] = _tokenAccountSupply;
+        _balances[owner()] = _supply;
 
         // Set the pool initial values
         require(_initialFloor < _initialCeiling, "Ceiling must be greater than the floor.");
         _pool.floor = _initialFloor;
         _pool.ceiling = _initialCeiling;
-        _pool.operatingPercent = 10;
-        _pool.treasuryPercent = 10;
+        _pool.buyReferrerPercent = 5;
+        _pool.buyHolderPercent = 10;
+        _pool.sellHolderPercent = 10;
+        _pool.buyMintOwnerPercent = 10;
+        _pool.sellHoldOwnerPercent = 10;
     }
 
     /**
@@ -422,22 +406,6 @@ contract FangToken is ERC20Interface, Ownable, Pausable, Freezable{
     }
 
     /**
-     * @dev Gets the dividend for token holders.
-     * @return An uint256 representing the dividend for token holders.
-     */
-    function tokenHolderDividend() public view returns (uint256){
-        return _tokenHolderDividend;
-    }
-
-    /**
-     * @dev Gets the dividend of a referrer
-     * @return An uint256 representing the dividend for the referrer.
-     */
-    function referrerDividend() public view returns (uint256){
-        return _referrerDividend;
-    }
-
-    /**
      * @dev Gets the dividend of a referrer
      * @return An uint256 representing the dividend for the referrer.
      */
@@ -450,8 +418,8 @@ contract FangToken is ERC20Interface, Ownable, Pausable, Freezable{
      * @dev Gets the current pool information.
      * @return Properties related to the pool information.
      */
-    function getPoolInfo() public view returns (uint256 total, uint256 floor, uint256 ceiling, uint256 operatingTotal, uint256 treasuryTotal, uint256 totalDividends, bool sellAllowed){
-        return (_pool.total, _pool.floor, _pool.ceiling, _pool.operatingTotal, _pool.treasuryTotal, _pool.totalDividends, _pool.sellAllowed);
+    function getPoolInfo() public view returns (uint256 total, uint256 floor, uint256 ceiling, uint256 totalDividends, bool sellAllowed){
+        return (_pool.total, _pool.floor, _pool.ceiling, _pool.totalDividends, _pool.sellAllowed);
     }
 
     /**
@@ -622,21 +590,6 @@ contract FangToken is ERC20Interface, Ownable, Pausable, Freezable{
         _lowerCap = newLowerCap;
     }
 
-    /**
-     * @dev Updates the pool address. OnlyOwner
-     * @param newPoolAccount The new pool address.
-     */
-    function setPoolAccount(address payable newPoolAccount) public onlyOwner {
-        _poolAccount = newPoolAccount;
-    }
-
-    /**
-     * @dev Updates the address responsible for distributing tokens. OnlyOwner
-     * @param newTokenAccount The new address responsible for distributing tokens.
-     */
-    function setTokenAccount(address payable newTokenAccount) public onlyOwner {
-        _tokenAccount = newTokenAccount;
-    }
 
     /**
      * @dev Updates the minimum ETH sell amount. OnlyOwner
@@ -644,22 +597,6 @@ contract FangToken is ERC20Interface, Ownable, Pausable, Freezable{
      */
     function setMinimumEthSellAmount(uint256 newMinimumEthSellAmount) public onlyOwner {
         _minimumEthSellAmount = newMinimumEthSellAmount;
-    }
-
-    /**
-     * @dev Updates the token holder dividend. OnlyOwner
-     * @param newTokenHolderDividend The new token holder dividend.
-     */
-    function setTokenHolderDividend(uint256 newTokenHolderDividend) public onlyOwner {
-        _tokenHolderDividend = newTokenHolderDividend;
-    }
-
-    /**
-     * @dev Updates the referral dividend. OnlyOwner
-     * @param newReferrerDividend The new referral dividend.
-     */
-    function setReferrerDividend(uint256 newReferrerDividend) public onlyOwner {
-        _referrerDividend = newReferrerDividend;
     }
 
     /**
@@ -706,16 +643,6 @@ contract FangToken is ERC20Interface, Ownable, Pausable, Freezable{
         }
     }
 
-     /**
-     * @dev Frontend function to calculate how many tokens could be bought with an amount of ETH.
-     * @param weiToSpend Amount of ETH to spend.
-     */
-    function calculateTokensReceived(uint256 weiToSpend) public view returns(uint256) {
-      uint256 totalDividend = weiToSpend.div(divideByPercent(_tokenHolderDividend));
-      uint256 ethValueLeftForPurchase = weiToSpend.sub(totalDividend);
-      return ethValueLeftForPurchase.div(_currentPrice);
-    }
-
     /**
      * @dev Burn an amount of tokens. OnlyOwner
      * @param amount Amount of tokens to burn.
@@ -734,26 +661,6 @@ contract FangToken is ERC20Interface, Ownable, Pausable, Freezable{
         _supply = _supply.add(amount);
         _balances[owner()] = _balances[owner()].add(amount);
         emit Transfer(address(0), owner(), amount);
-    }
-
-    /**
-     * @dev Withdraw operating. OnlyOwner
-     */
-    function withdrawOperatingBalance() public whenNotPaused onlyOwner {
-        address payable owner = owner();
-        owner.transfer(_pool.operatingTotal);
-        emit onOperatingWithdraw(_pool.operatingTotal);
-        _pool.operatingTotal = 0;
-    }
-
-    /**
-     * @dev Withdraw treasury. OnlyOwner
-     */
-    function withdrawTreasuryBalance() public whenNotPaused onlyOwner {
-        address payable owner = owner();
-        owner.transfer(_pool.treasuryTotal);
-        emit onTreasuryWithdraw(_pool.operatingTotal);
-        _pool.treasuryTotal = 0;
     }
     
     /**
@@ -781,15 +688,56 @@ contract FangToken is ERC20Interface, Ownable, Pausable, Freezable{
         requireUnfrozen(msg.sender);
       require(msg.sender != referrer, "Buyer and referrer cannot be the same.");
       claimDividendByAddress(msg.sender);
+      buyCore(referrer, msg.value);
+      return true;
+    }
+    
+    /**
+     * @dev Calculate buy numbers
+     */
+    function estimateBuy(uint256 value, bool hasReferrer) public view returns(uint256 tokens, uint256 referrerDividend, uint256 holdingDividend, uint256 poolIncrease) {
+        uint256 tokenAmount; 
+        uint256 referralDividend;
+        uint256 holderDividend;
+        uint256 poolIncreaseAmt;
+        
+         /*
+        Dividends
+       */
 
-      /*
+      if(hasReferrer)
+      {
+        referralDividend = value.div(divideByPercent(_pool.buyReferrerPercent)); 
+        holderDividend = value.div(divideByPercent(_pool.buyHolderPercent)); 
+      }
+      else
+      {
+         holderDividend = value.div(divideByPercent(_pool.buyHolderPercent.add(_pool.buyReferrerPercent)));  
+      }
+
+
+     /*
+        Tokens
+      */
+      
+      uint256 allDividends = holderDividend.add(referralDividend);
+
+      poolIncreaseAmt = value.sub(allDividends);
+
+      // Determine how many tokens can be bought with original value
+      tokenAmount = calculateTokenAmount(value);
+        
+      return (tokenAmount, referralDividend, holderDividend, poolIncreaseAmt);
+    }
+    
+    function buyCore(address payable referrer, uint256 msgValue) private returns(bool)
+    {
+        /*
         Dividends
        */
         uint256 tokenAmount = 0;
         uint256 referralDividend = 0;
-        uint256 actualTokenHolderDividend = 0;
-        uint256 operatingCut = 0;
-        uint256 treasuryCut = 0;
+        uint256 holderDividend = 0;
         uint256 poolIncrease = 0;
         bool hasReferrer = false;
 
@@ -798,24 +746,16 @@ contract FangToken is ERC20Interface, Ownable, Pausable, Freezable{
           hasReferrer = true;
       }
 
-      (tokenAmount, referralDividend, actualTokenHolderDividend, operatingCut, treasuryCut, poolIncrease) = estimateBuy(msg.value, hasReferrer);
+      (tokenAmount, referralDividend, holderDividend, poolIncrease) = estimateBuy(msgValue, hasReferrer);
       
      /*
         Tokens
       */
-      require(_balances[_tokenAccount] > tokenAmount, "Not enough tokens available for sale.");
       require(poolIncrease >= _currentPrice, "Amount must be greater than or equal to the token price.");
 
-      _balances[msg.sender] = _balances[msg.sender].add(tokenAmount);
-      _balances[_tokenAccount] = _balances[_tokenAccount].sub(tokenAmount);
+      mintOnBuy(msg.sender, tokenAmount);
       
-      
-      // Adjust pool values
-      _pool.operatingTotal = _pool.operatingTotal.add(operatingCut);
-
-      _pool.treasuryTotal = _pool.treasuryTotal.add(treasuryCut);
-      
-      increaseTotalDividends(actualTokenHolderDividend);
+      increaseTotalDividends(holderDividend);
       
       updatePoolState(poolIncrease, true);
       
@@ -824,84 +764,60 @@ contract FangToken is ERC20Interface, Ownable, Pausable, Freezable{
       {
           referrer.transfer(referralDividend);
       }
+      else
+      {
+          owner().transfer(referralDividend);
+      }
 
-      emit Transfer(_tokenAccount, msg.sender, tokenAmount);
-      emit onTokenPurchase(msg.sender, msg.value, tokenAmount, referrer);
+      emit onTokenPurchase(msg.sender, msgValue, tokenAmount, referrer);
 
       // Update the current price based on actual token amount sold
       _currentPrice = _currentPrice.add(_increment.mul(tokenAmount));
       emit onPriceChange(_currentPrice);
-
-      return true;
     }
     
     /**
-     * @dev Calculate buy numbers
+     * @dev mintOnBuy
      */
-    function estimateBuy(uint256 value, bool hasReferrer) public view returns(uint256 tokens, uint256 referrerValue, uint256 totalDividendIncrease, uint256 operatingIncrease, uint256 treasuryIncrease, uint256 poolIncrease) {
-        uint256 tokenAmount; 
-        uint256 referralDividend;
-        uint256 actualTokenHolderDividend;
-        uint256 operatingCut;
-        uint256 treasuryCut;
-        uint256 poolIncreaseAmt;
-        
-         /*
-        Dividends
-       */
-      uint256 totalDividend = calculateTotalDividend(value);
-
-      if(hasReferrer)
-      {
-        referralDividend = calculateReferralDividend(totalDividend); 
-      }
-
-      actualTokenHolderDividend = totalDividend.sub(referralDividend);
-
-     /*
-        Tokens
-      */
-      
-      operatingCut = calculateOperatingCut(value);
-
-      treasuryCut = calculateTreasuryCut(value);
-
-      poolIncreaseAmt = calculatePoolIncrease(value, totalDividend, operatingCut, treasuryCut);
-
-      // Determine how many tokens can be bought with original value
-      tokenAmount = calculateTokenAmount(value);
-        
-      return (tokenAmount, referralDividend, actualTokenHolderDividend, operatingCut, treasuryCut, poolIncreaseAmt);
-    }
+     function mintOnBuy(address sender, uint256 tokenAmount) private returns(bool)
+     {
+         uint256 ownerMintedTokens = 0;
+         uint256 totalMintedTokens = tokenAmount;
+         
+         // give owner their percent
+         if(_pool.buyMintOwnerPercent > 0)
+         {
+            ownerMintedTokens = tokenAmount.div(divideByPercent(_pool.buyMintOwnerPercent));
+            _balances[owner()] = _balances[owner()].add(ownerMintedTokens);
+            totalMintedTokens = totalMintedTokens.add(ownerMintedTokens);
+         }
+         
+         _balances[sender] = _balances[sender].add(tokenAmount);
+         _supply = _supply.add(totalMintedTokens);
+         
+         return true;
+     }
+     
+    /**
+     * @dev reinvest
+     */
+     function reinvest(address payable referrer) public returns(uint256 tokenAmount)
+     {
+         uint256 tokensFromReinvestment = 0;
+         
+         uint256 ethValue = dividendBalanceOf(msg.sender);
+         require(ethValue > 0, "No dividends to reinvest.");
+         
+         _lastDividends[msg.sender] = _pool.totalDividends;
+         
+         buyCore(referrer, ethValue);
+         
+         return tokensFromReinvestment;
+     }
     
     function calculateTokenAmount(uint256 valueIn) private view returns(uint256 valueOut)
     {
         return(valueIn.div(_currentPrice));
-    }
-    
-    function calculateTotalDividend(uint256 valueIn) private view returns(uint256 valueOut)
-    {
-        return(valueIn.div(divideByPercent(_tokenHolderDividend)));
-    }
-    
-    function calculateReferralDividend(uint256 valueIn) private view returns(uint256 valueOut)
-    {
-        return(valueIn.div(divideByPercent(_referrerDividend)));
-    }
-    
-    function calculatePoolIncrease(uint256 valueIn, uint256 valueSubDividends, uint256 valueSubOperating, uint256 valueSubTreasury) private pure returns(uint256 valueOut)
-    {
-        return(valueIn.sub(valueSubDividends).sub(valueSubOperating).sub(valueSubTreasury));
-    }
-    
-    function calculateOperatingCut(uint256 valueIn) private view returns(uint256 valueOut)
-    {
-        return(valueIn.div(divideByPercent(_pool.operatingPercent)));
-    }
-    
-    function calculateTreasuryCut(uint256 valueIn) private view returns(uint256 valueOut)
-    {
-        return(valueIn.div(divideByPercent(_pool.treasuryPercent)));
     }
 
     /**
@@ -910,7 +826,7 @@ contract FangToken is ERC20Interface, Ownable, Pausable, Freezable{
      * @return An uint256 representing number of dividends currently owed to the address.
      */
     function dividendBalanceOf(address account) public view returns (uint256) {
-      uint256 newDividends = _pool.totalDividends.sub(accounts[account].lastDividends);
+      uint256 newDividends = _pool.totalDividends.sub(_lastDividends[account]);
       uint256 product = _balances[account].mul(newDividends);
       return product.div(_supply);
     }
@@ -935,7 +851,7 @@ contract FangToken is ERC20Interface, Ownable, Pausable, Freezable{
       uint256 owing = dividendBalanceOf(sender);
       if (owing > 0) {
         sender.transfer(owing);
-        accounts[sender].lastDividends = _pool.totalDividends;
+        _lastDividends[sender] = _pool.totalDividends;
         emit onClaimDividend(sender, owing);
       }
     }
@@ -960,13 +876,10 @@ contract FangToken is ERC20Interface, Ownable, Pausable, Freezable{
       (holderDividend, ethValueLeftAfterDividend) = estimateSell(tokenAmount);
       increaseTotalDividends(holderDividend);
 
-      require(tokenAmount <= _balances[_tokenAccount], "Cannot sell more than the balance.");
+      
       require(address(this).balance >= ethValueLeftAfterDividend, "Unable to fund the sell transaction.");
 
-      _balances[msg.sender] = _balances[msg.sender].sub(tokenAmount);
-      _balances[_tokenAccount] = _balances[_tokenAccount].add(tokenAmount);
-
-      emit Transfer(msg.sender, _tokenAccount, tokenAmount);
+      burnOnSell(msg.sender, tokenAmount);
 
       // Update the current price based on actual token amount sold
       _currentPrice = _currentPrice.sub(_increment.mul(tokenAmount));
@@ -993,11 +906,34 @@ contract FangToken is ERC20Interface, Ownable, Pausable, Freezable{
         uint256 value = tokenAmount.mul(_currentPrice);
 
       // Dividends
-      uint256 totalDividend = calculateTotalDividend(value);
-      uint256 valueToReceive = value.sub(totalDividend);
+      uint256 holderDividend = value.div(divideByPercent(_pool.sellHolderPercent));
+      uint256 valueToReceive = value.sub(holderDividend);
 
-      return (valueToReceive, totalDividend);
+      return (valueToReceive, holderDividend);
     }
+    
+    /**
+     * @dev burnOnSell
+     */
+     function burnOnSell(address sender, uint256 tokenAmount) private returns(bool)
+     {
+         require(_balances[sender] > tokenAmount, "Sender unable to fund burn. Insufficient tokens.");
+         uint256 ownerSavedTokens = 0;
+         uint256 totalBurnedTokens = tokenAmount;
+         
+         if(_pool.sellHoldOwnerPercent > 0)
+         {
+             ownerSavedTokens = tokenAmount.div(divideByPercent(_pool.sellHoldOwnerPercent));
+             totalBurnedTokens = totalBurnedTokens.sub(ownerSavedTokens);
+         }
+         
+         
+         _balances[sender] = _balances[sender].sub(tokenAmount);
+         _balances[owner()] = _balances[owner()].add(ownerSavedTokens);
+         _supply = _supply.sub(totalBurnedTokens);
+         
+         return true;
+     }
 
     /**
      * @dev Transfer token for a specified addresses
