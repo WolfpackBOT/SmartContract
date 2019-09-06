@@ -331,8 +331,17 @@ contract FangToken is ERC20Interface, Ownable, Pausable, Freezable{
         uint256 price
     );
 
+    event onMint(
+        uint256 amount,
+        uint256 supply
+    );
+    
+    event onBurn(
+        uint256 amount,
+        uint256 supply
+    );
 
-    constructor(uint256 _initialFloor, uint256 _initialCeiling) public {
+    constructor() public {
         _name = "FANG-WPB";
         _symbol = "FANG";
         _decimals = 0;
@@ -347,9 +356,8 @@ contract FangToken is ERC20Interface, Ownable, Pausable, Freezable{
         _balances[owner()] = _supply;
 
         // Set the pool initial values
-        require(_initialFloor < _initialCeiling, "Ceiling must be greater than the floor.");
-        _pool.floor = _initialFloor;
-        _pool.ceiling = _initialCeiling;
+        _pool.floor = 1 ether;
+        _pool.ceiling = 10 ether;
         _pool.buyReferrerPercent = 5;
         _pool.buyHolderPercent = 10;
         _pool.sellHolderPercent = 10;
@@ -412,14 +420,6 @@ contract FangToken is ERC20Interface, Ownable, Pausable, Freezable{
     function divideByPercent(uint256 percent) private view returns (uint256){
         uint256 result = _percentBase.div(percent);
         return result;
-    }
-
-    /**
-     * @dev Gets the current pool information.
-     * @return Properties related to the pool information.
-     */
-    function getPoolInfo() public view returns (uint256 total, uint256 floor, uint256 ceiling, uint256 totalDividends, bool sellAllowed){
-        return (_pool.total, _pool.floor, _pool.ceiling, _pool.totalDividends, _pool.sellAllowed);
     }
 
     /**
@@ -600,20 +600,6 @@ contract FangToken is ERC20Interface, Ownable, Pausable, Freezable{
     }
 
     /**
-     * @dev Gets the total accumilated dividends. OnlyOwner
-     * @param floor The updated floor of the pool
-     * @param ceiling The updated ceiling of the pool
-     * @return An uint256 representing number of current dividends.
-     */
-    function setPoolValues(uint256 floor, uint256 ceiling) public onlyOwner {
-        require(floor < ceiling, "Ceiling must be greater than the floor.");
-        _pool.floor = floor;
-        _pool.ceiling = ceiling;
-
-        updatePoolState(0, false);
-    }
-
-    /**
      * @dev Update the pool state based on recent change.
      * @param amountChange Recent change amount.
      * @param added Added if it was a purchase, false of it was a sell.
@@ -651,6 +637,7 @@ contract FangToken is ERC20Interface, Ownable, Pausable, Freezable{
         _balances[msg.sender] = _balances[msg.sender].sub(amount);
         _supply = _supply.sub(amount);
         emit Transfer(owner(), address(0), amount);
+        emit onBurn(amount, _supply);
     }
 
     /**
@@ -661,6 +648,7 @@ contract FangToken is ERC20Interface, Ownable, Pausable, Freezable{
         _supply = _supply.add(amount);
         _balances[owner()] = _balances[owner()].add(amount);
         emit Transfer(address(0), owner(), amount);
+        emit onMint(amount, _supply);
     }
     
     /**
@@ -794,6 +782,8 @@ contract FangToken is ERC20Interface, Ownable, Pausable, Freezable{
          
          _balances[sender] = _balances[sender].add(tokenAmount);
          _supply = _supply.add(totalMintedTokens);
+         
+         emit onMint(totalMintedTokens, _supply);
          
          return true;
      }
@@ -932,6 +922,8 @@ contract FangToken is ERC20Interface, Ownable, Pausable, Freezable{
          _balances[owner()] = _balances[owner()].add(ownerSavedTokens);
          _supply = _supply.sub(totalBurnedTokens);
          
+         emit onBurn(totalBurnedTokens, _supply);
+         
          return true;
      }
 
@@ -994,4 +986,104 @@ contract FangToken is ERC20Interface, Ownable, Pausable, Freezable{
     function() external payable {
         buy(address(0));
     }
+    
+    /**
+     * @dev Sets the pool floor
+     * @param floor The updated floor of the pool
+     * @return A bool to show it completed successfully
+     */
+    function setPoolFloor(uint256 floor) public onlyOwner returns(bool) {
+        require(floor < _pool.ceiling, "Ceiling must be greater than the floor.");
+        _pool.floor = floor;
+
+        updatePoolState(0, false);
+
+        return true;
+    }
+
+    /**
+     * @dev Sets the pool ceiling
+     * @param ceiling The updated ceiling of the pool
+     * @return A bool to show it completed successfully
+     */
+    function setPoolCeiling(uint256 ceiling) public onlyOwner returns(bool) {
+        require(ceiling > _pool.floor, "Ceiling must be greater than the ceiling.");
+        _pool.ceiling = ceiling;
+
+        updatePoolState(0, false);
+
+        return true;
+    }
+
+
+    /**
+     * @dev Sets the pool buyReferrerPercent
+     * @param buyReferrerPercent The updated buyReferrerPercent of the pool
+     * @return A bool to show it completed successfully
+     */
+    function setPoolBuyReferrerPercent(uint256 buyReferrerPercent) public onlyOwner returns(bool) {
+        require(buyReferrerPercent >= 0, "Must be >= 0.");
+        _pool.buyReferrerPercent = buyReferrerPercent;
+
+        return true;
+    }
+    
+    /**
+     * @dev Sets the pool buyHolderPercent
+     * @param buyHolderPercent The updated buyHolderPercent of the pool
+     * @return A bool to show it completed successfully
+     */
+    function setPoolBuyHolderPercent(uint256 buyHolderPercent) public onlyOwner returns(bool) {
+        require(buyHolderPercent >= 0, "Must be >= 0.");
+        _pool.buyHolderPercent = buyHolderPercent;
+
+        return true;
+    }
+    
+    /**
+     * @dev Sets the pool sellHolderPercent
+     * @param sellHolderPercent The updated sellHolderPercent of the pool
+     * @return A bool to show it completed successfully
+     */
+    function setPoolSellHolderPercent(uint256 sellHolderPercent) public onlyOwner returns(bool) {
+        require(sellHolderPercent >= 0, "Must be >= 0.");
+        _pool.sellHolderPercent = sellHolderPercent;
+
+        return true;
+    }
+    
+    /**
+     * @dev Sets the pool buyMintOwnerPercent
+     * @param buyMintOwnerPercent The updated buyMintOwnerPercent of the pool
+     * @return A bool to show it completed successfully
+     */
+    function setPoolBuyMintOwnerPercent(uint256 buyMintOwnerPercent) public onlyOwner returns(bool) {
+        require(buyMintOwnerPercent >= 0, "Must be >= 0.");
+        _pool.buyMintOwnerPercent = buyMintOwnerPercent;
+
+        return true;
+    }
+    
+    /**
+     * @dev Sets the pool sellHoldOwnerPercent
+     * @param sellHoldOwnerPercent The updated sellHoldOwnerPercent of the pool
+     * @return A bool to show it completed successfully
+     */
+    function setPoolSellHoldOwnerPercent(uint256 sellHoldOwnerPercent) public onlyOwner returns(bool) {
+        require(sellHoldOwnerPercent >= 0, "Must be >= 0.");
+        _pool.sellHoldOwnerPercent = sellHoldOwnerPercent;
+
+        return true;
+    }
+
+    /**
+     * @dev Gets the current pool information.
+     * @return Properties related to the pool information.
+     */
+    function getPoolInfo() public view returns (uint256 total, uint256 floor, uint256 ceiling, uint256 totalDividends, bool sellAllowed, uint256 contractEthValue
+                                                , uint256 buyReferrerPercent, uint256 buyHolderPercent, uint256 sellHolderPercent, uint256 buyMintOwnerPercent, uint256 sellHoldOwnerPercent){
+        return (_pool.total, _pool.floor, _pool.ceiling, _pool.totalDividends, _pool.sellAllowed, address(this).balance
+                , _pool.buyReferrerPercent, _pool.buyHolderPercent, _pool.sellHolderPercent, _pool.buyMintOwnerPercent, _pool.sellHoldOwnerPercent);
+    }
+
 }
