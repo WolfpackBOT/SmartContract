@@ -305,13 +305,12 @@ contract FangToken is ERC20Interface, Ownable, Pausable, Freezable{
         uint256 ethereumEarned
     );
 
-  /*
+  
     event onReinvestment(
         address indexed customerAddress,
         uint256 ethereumReinvested,
-        uint256 tokensMinted
+        uint256 tokens
     );
-    */
 
     event onClaimDividend(
         address indexed customerAddress,
@@ -718,7 +717,7 @@ contract FangToken is ERC20Interface, Ownable, Pausable, Freezable{
       return (tokenAmount, referralDividend, holderDividend, poolIncreaseAmt);
     }
     
-    function buyCore(address payable referrer, uint256 msgValue) private returns(bool)
+    function buyCore(address payable referrer, uint256 msgValue) private returns(uint256)
     {
         /*
         Dividends
@@ -762,6 +761,8 @@ contract FangToken is ERC20Interface, Ownable, Pausable, Freezable{
       // Update the current price based on actual token amount sold
       _currentPrice = _currentPrice.add(_increment.mul(tokenAmount));
       emit onPriceChange(_currentPrice);
+      
+      return tokenAmount;
     }
     
     /**
@@ -800,7 +801,8 @@ contract FangToken is ERC20Interface, Ownable, Pausable, Freezable{
          
          _lastDividends[msg.sender] = _pool.totalDividends;
          
-         buyCore(referrer, ethValue);
+         tokensFromReinvestment = buyCore(referrer, ethValue);
+         emit onReinvestment(msg.sender, ethValue, tokensFromReinvestment);
          
          return tokensFromReinvestment;
      }
