@@ -258,6 +258,7 @@ contract EvolutionToken is ERC20Interface, Ownable, Pausable, Freezable{
       uint256 sellHolderPercent;
       uint256 buyMintOwnerPercent;
       uint256 sellHoldOwnerPercent;
+      uint256 totalDividendsClaimed;
     }
 
     string private _name;
@@ -755,9 +756,11 @@ contract EvolutionToken is ERC20Interface, Ownable, Pausable, Freezable{
 
     function claimDividendCore(address payable sender) private whenNotPaused {
       uint256 owing = dividendBalanceOf(sender);
+      require(_pool.totalDividendsClaimed.add(owing) <= _pool.totalDividends, "Unable to fund dividend claim.");
       if (owing > 0) {
         sender.transfer(owing);
         _lastDividends[sender] = _pool.totalDividends;
+        _pool.totalDividendsClaimed = _pool.totalDividendsClaimed.add(owing);
         emit onClaimDividend(sender, owing);
       }
     }
@@ -962,15 +965,34 @@ contract EvolutionToken is ERC20Interface, Ownable, Pausable, Freezable{
 
         return true;
     }
+    
+    /**
+     * @dev gets wether contract is funded for both the pool and unclaimed dividends
+     * @return A bool to show if balanced
+     */
+    function getIsPoolBalanced() private view returns(bool) {
+        uint256 dividendsUnclaimed = _pool.totalDividends.sub(_pool.totalDividendsClaimed);
+        if(address(this).balance == _pool.total.add(dividendsUnclaimed))
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
 
     /**
      * @dev Gets the current pool information.
      * @return Properties related to the pool information.
      */
     function getPoolInfo() public view returns (uint256 total, uint256 floor, uint256 ceiling, uint256 totalDividends, bool sellAllowed, uint256 contractEthValue
-                                                , uint256 buyReferrerPercent, uint256 buyHolderPercent, uint256 sellHolderPercent, uint256 buyMintOwnerPercent, uint256 sellHoldOwnerPercent){
+                                                , uint256 buyReferrerPercent, uint256 buyHolderPercent, uint256 sellHolderPercent, uint256 buyMintOwnerPercent, uint256 sellHoldOwnerPercent
+                                                , uint256 totalDividendsClaimed, uint256 totalDividendsUnclaimed, bool fundingBalanced){
+                                                    uint256 dividendsUnclaimed = _pool.totalDividends.sub(_pool.totalDividendsClaimed);
         return (_pool.total, _pool.floor, _pool.ceiling, _pool.totalDividends, _pool.sellAllowed, address(this).balance
-                , _pool.buyReferrerPercent, _pool.buyHolderPercent, _pool.sellHolderPercent, _pool.buyMintOwnerPercent, _pool.sellHoldOwnerPercent);
+                , _pool.buyReferrerPercent, _pool.buyHolderPercent, _pool.sellHolderPercent, _pool.buyMintOwnerPercent, _pool.sellHoldOwnerPercent
+                , _pool.totalDividendsClaimed, dividendsUnclaimed, getIsPoolBalanced());
     }
 
 }
