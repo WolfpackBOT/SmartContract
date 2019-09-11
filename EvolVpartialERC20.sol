@@ -55,7 +55,6 @@ contract BoardApprovable {
 
     /**
     * @dev BoardApprovable constructor
-    * account.
     */
     constructor() internal {
       // 1 for testing, but should likely be 3
