@@ -3,15 +3,15 @@ pragma solidity ^0.5.1;
 /*
 
 
-   $$$$$$$$\                  $$\             $$\     $$\                           $$$$$$$$\        $$\                           
-   $$  _____|                 $$ |            $$ |    \__|                          \__$$  __|       $$ |                          
-   $$ |  $$\    $$\  $$$$$$\  $$ |$$\   $$\ $$$$$$\   $$\  $$$$$$\  $$$$$$$\           $$ | $$$$$$\  $$ |  $$\  $$$$$$\  $$$$$$$\  
-   $$$$$\\$$\  $$  |$$  __$$\ $$ |$$ |  $$ |\_$$  _|  $$ |$$  __$$\ $$  __$$\          $$ |$$  __$$\ $$ | $$  |$$  __$$\ $$  __$$\ 
+   $$$$$$$$\                  $$\             $$\     $$\                           $$$$$$$$\        $$\
+   $$  _____|                 $$ |            $$ |    \__|                          \__$$  __|       $$ |
+   $$ |  $$\    $$\  $$$$$$\  $$ |$$\   $$\ $$$$$$\   $$\  $$$$$$\  $$$$$$$\           $$ | $$$$$$\  $$ |  $$\  $$$$$$\  $$$$$$$\
+   $$$$$\\$$\  $$  |$$  __$$\ $$ |$$ |  $$ |\_$$  _|  $$ |$$  __$$\ $$  __$$\          $$ |$$  __$$\ $$ | $$  |$$  __$$\ $$  __$$\
    $$  __|\$$\$$  / $$ /  $$ |$$ |$$ |  $$ |  $$ |    $$ |$$ /  $$ |$$ |  $$ |         $$ |$$ /  $$ |$$$$$$  / $$$$$$$$ |$$ |  $$ |
    $$ |    \$$$  /  $$ |  $$ |$$ |$$ |  $$ |  $$ |$$\ $$ |$$ |  $$ |$$ |  $$ |         $$ |$$ |  $$ |$$  _$$<  $$   ____|$$ |  $$ |
    $$$$$$$$\\$  /   \$$$$$$  |$$ |\$$$$$$  |  \$$$$  |$$ |\$$$$$$  |$$ |  $$ |         $$ |\$$$$$$  |$$ | \$$\ \$$$$$$$\ $$ |  $$ |
    \________|\_/     \______/ \__| \______/    \____/ \__| \______/ \__|  \__|         \__| \______/ \__|  \__| \_______|\__|  \__|
-                                                                                                                                
+
 
  */
 
@@ -22,108 +22,146 @@ contract ERC20Interface {
     event Transfer(address indexed from, address indexed to, uint256 value);
 }
 
-contract Ownable {
-  address payable private _owner;
+contract BoardApprovable {
+    uint private _totalBoardMembers;
+    uint private _boardMemberApprovedCount;
+    uint private _minBoardMemberApprovalsForAction;
+    uint private _mappingVersion;
+    mapping(address => bool) private _boardMembers;
+    mapping(uint => mapping(address => bool)) private _boardMemberVoted;
 
-  event OwnershipTransferred(
-    address indexed previousOwner,
-    address indexed newOwner
-  );
+    event BoardMemberAdded(
+      address indexed boardMemberAddress
+    );
 
-  /**
-  * @dev he Ownable constructor sets the original `owner` of the contract to the sender
-  * account.
-  */
-  constructor() internal {
-    _owner = msg.sender;
-    emit OwnershipTransferred(address(0), _owner);
-  }
+    event BoardMemberRemoved(
+      address indexed boardMemberAddress
+    );
 
-  /**
-  * @return the address of the owner.
-  */
-  function owner() public view returns(address payable) {
-    return _owner;
-  }
+    event BoardMemberApprovalAdded(
+      address indexed boardMemberAddress,
+      bool approved
+    );
 
-  /**
-  * @dev Throws if called by any account other than the owner.
-  */
-  modifier onlyOwner() {
-    require(isOwner(), "Only owner is allowed.");
-    _;
-  }
+    modifier isBoardMember() {
+          require(_boardMembers[msg.sender], "Not a board member");
+          _;
+      }
 
-  /**
-  * @return true if `msg.sender` is the owner of the contract.
-  */
-  function isOwner() public view returns(bool) {
-    return msg.sender == _owner;
-  }
+    modifier isBoardApproved() {
+          require(_boardMemberApprovedCount >= _minBoardMemberApprovalsForAction, "Board not approved");
+          _;
+      }
 
-  /**
-  * @dev Allows the current owner to transfer control of the contract to a newOwner.
-  * @param newOwner The address to transfer ownership to.
-  */
-  function transferOwnership(address payable newOwner) public onlyOwner {
-    _transferOwnership(newOwner);
-  }
+    /**
+    * @dev BoardApprovable constructor
+    * account.
+    */
+    constructor() internal {
+      // 1 for testing, but should likely be 3
+      _minBoardMemberApprovalsForAction = 1;
 
-  /**
-  * @dev Transfers control of the contract to a newOwner.
-  * @param newOwner The address to transfer ownership to.
-  */
-  function _transferOwnership(address payable newOwner) internal {
-    require(newOwner != address(0), "New order cannot be empty.");
-    emit OwnershipTransferred(_owner, newOwner);
-    _owner = newOwner;
-  }
+      // Load the default board members
+      _boardMembers[0x54168F68D51a86DEdA3D5EA14A3E45bE74EFfbd4] = true;
+    }
+
+    function addBoardMember(address boardMemberAddress) public isBoardMember isBoardApproved {
+      if(!_boardMembers[boardMemberAddress]) {
+        _boardMembers[boardMemberAddress] = true;
+        _totalBoardMembers++;
+        emit BoardMemberAdded(boardMemberAddress);
+      }
+    }
+
+    function removeBoardMember(address boardMemberAddress) public isBoardMember isBoardApproved {
+      if(_boardMembers[boardMemberAddress]) {
+        _boardMembers[boardMemberAddress] = false;
+        _totalBoardMembers--;
+        emit BoardMemberRemoved(boardMemberAddress);
+      }
+    }
+
+    function addBoardMemberApproval(bool approved) public isBoardMember {
+      if(approved) {
+        if(!_boardMemberVoted[_mappingVersion][msg.sender]) {
+          _boardMemberVoted[_mappingVersion][msg.sender] = approved;
+          _boardMemberApprovedCount++;
+          emit BoardMemberApprovalAdded(msg.sender, approved);
+        }
+      } else {
+        // Remove previous approval if it exists
+        if(_boardMemberVoted[_mappingVersion][msg.sender]) {
+            _boardMemberVoted[_mappingVersion][msg.sender] = approved;
+          _boardMemberApprovedCount--;
+          emit BoardMemberApprovalAdded(msg.sender, approved);
+        }
+      }
+    }
+
+    function clearApprovals() public isBoardMember {
+      _mappingVersion++;
+      _boardMemberApprovedCount = 0;
+    }
+
+    function isSenderBoardMember() public view returns(bool) {
+      return _boardMembers[msg.sender];
+    }
+
+    /**
+     * @dev Gets the current board status
+     * @return Properties related to the board status.
+     */
+    function getBoardStatus() public view returns (bool approved, uint approvedCount, uint totalBoardMembers) {
+        return (_boardMemberApprovedCount >= _minBoardMemberApprovalsForAction, _boardMemberApprovedCount, _totalBoardMembers);
+    }
 }
 
-contract Freezable is Ownable {
-    mapping (address => bool) _frozen;
-    
-      event AddressFrozen(
-        address Address
-      );
-  
-      event AddressUnfrozen(
-        address Address
-      );
-    
+contract Freezable is BoardApprovable {
+  mapping (address => bool) _frozen;
+
+    event AddressFrozen(
+      address Address
+    );
+
+    event AddressUnfrozen(
+      address Address
+    );
+
     /**
-  * @dev Allows the owner to freeze an address
-  * @param account is the address used by the function to freeze
-  */
-        function freezeAddress(address account) public onlyOwner {
-            require(_frozen[account] == false, "Freezable: Account already frozen, unable to freeze.");
-            _frozen[account] = true;
-            emit AddressFrozen(account);
-        }
-    
-        /**
-  * @dev Allows the owner to unfreeze an address
-  * @param account is the address used by the function to unfreeze
-  */
-        function unfreezeAddress(address account) public onlyOwner {
-            require(_frozen[account] == true, "Freezable: Account not frozen, unable to unfreeze.");
-            _frozen[account] = false;
-            emit AddressUnfrozen(account);
-        }
-    
-        /**
-      * @return if the address is frozen
-      */
-      function isFrozen(address account) public view returns(bool) {
-        return _frozen[account];
+    * @dev Allows the owner to freeze an address
+    * @param account is the address used by the function to freeze
+    */
+      function freezeAddress(address account) public isBoardMember isBoardApproved {
+          require(_frozen[account] == false, "Freezable: Account already frozen, unable to freeze.");
+          _frozen[account] = true;
+          emit AddressFrozen(account);
+          clearApprovals();
       }
-      
-     /**
-      * @return if the address is frozen
-      */
-      function requireUnfrozen(address account) internal view returns(bool) {
-        require(!isFrozen(account), "Address involved in transaction is frozen.");
+
+    /**
+    * @dev Allows the owner to unfreeze an address
+    * @param account is the address used by the function to unfreeze
+    */
+      function unfreezeAddress(address account) public isBoardMember isBoardApproved {
+          require(_frozen[account] == true, "Freezable: Account not frozen, unable to unfreeze.");
+          _frozen[account] = false;
+          emit AddressUnfrozen(account);
+          clearApprovals();
       }
+
+    /**
+    * @return if the address is frozen
+    */
+    function isFrozen(address account) public view returns(bool) {
+      return _frozen[account];
+    }
+
+    /**
+    * @return if the address is frozen
+    */
+    function requireUnfrozen(address account) internal view returns(bool) {
+      require(!isFrozen(account), "Address involved in transaction is frozen.");
+    }
 }
 
 /**
@@ -135,7 +173,7 @@ contract Freezable is Ownable {
  * the functions of your contract. Note that they will not be pausable by
  * simply including this module, only once the modifiers are put in place.
  */
-contract Pausable is Ownable {
+contract Pausable is BoardApprovable {
     /**
      * @dev Emitted when the pause is triggered by a pauser (`account`).
      */
@@ -182,17 +220,19 @@ contract Pausable is Ownable {
     /**
      * @dev Called by a pauser to pause, triggers stopped state.
      */
-    function pause() public onlyOwner whenNotPaused {
+    function pause() public isBoardMember isBoardApproved whenNotPaused {
         _paused = true;
         emit Paused(msg.sender);
+        clearApprovals();
     }
 
     /**
      * @dev Called by a pauser to unpause, returns to normal state.
      */
-    function unpause() public onlyOwner whenPaused {
+    function unpause() public isBoardMember isBoardApproved whenPaused {
         _paused = false;
         emit Unpaused(msg.sender);
+        clearApprovals();
     }
 }
 
@@ -238,8 +278,7 @@ library SafeMath {
   }
 }
 
-contract EvolutionToken is ERC20Interface, Ownable, Pausable, Freezable{
-
+contract EvolutionToken is ERC20Interface, BoardApprovable, Pausable, Freezable {
     using SafeMath for uint;
     using SafeMath for uint8;
     using SafeMath for uint32;
@@ -272,6 +311,7 @@ contract EvolutionToken is ERC20Interface, Ownable, Pausable, Freezable{
     uint256 private _lowerCap;
     uint256 private _minimumEthSellAmount;
     uint256 private _percentBase; // Should be 100 if using whole int percents.
+    address payable _creator;
 
     mapping(address => uint256) private _balances;
     mapping (address => uint256) _lastDividends;
@@ -291,7 +331,6 @@ contract EvolutionToken is ERC20Interface, Ownable, Pausable, Freezable{
         uint256 ethereumEarned
     );
 
-  
     event onReinvestment(
         address indexed customerAddress,
         uint256 ethereumReinvested,
@@ -302,12 +341,11 @@ contract EvolutionToken is ERC20Interface, Ownable, Pausable, Freezable{
         address indexed customerAddress,
         uint256 ethereumWithdrawn
     );
-    
+
     event onDividendIncrease(
         uint256 totalDividendIncrease
     );
-    
-    
+
     event onSellEnabledChange(
         bool enabled
     );
@@ -320,13 +358,14 @@ contract EvolutionToken is ERC20Interface, Ownable, Pausable, Freezable{
         uint256 amount,
         uint256 supply
     );
-    
+
     event onBurn(
         uint256 amount,
         uint256 supply
     );
 
     constructor() public {
+        _creator = msg.sender;
         _name = "Evolution Token";
         _symbol = "EvolV";
         _decimals = 0;
@@ -338,7 +377,7 @@ contract EvolutionToken is ERC20Interface, Ownable, Pausable, Freezable{
         _percentBase = 100; // _percentBase.div(uint256) will return a whole integer percentage value you can divide large numbers with
 
         // Give founder all supply
-        _balances[owner()] = _supply;
+        _balances[_creator] = _supply;
 
         // Set the pool initial values
         _pool.floor = 1 ether;
@@ -378,7 +417,7 @@ contract EvolutionToken is ERC20Interface, Ownable, Pausable, Freezable{
      * @dev Gets the total accumilated dividends.
      * @return An uint256 representing number of current dividends.
      */
-    function getTotalDividends() public view returns (uint256){
+    function getTotalDividends() public view returns (uint256) {
         return _pool.totalDividends;
     }
 
@@ -386,7 +425,7 @@ contract EvolutionToken is ERC20Interface, Ownable, Pausable, Freezable{
      * @dev Gets the current price for 1 token.
      * @return An uint256 representing the current price for 1 token.
      */
-    function currentPrice() public view returns (uint256){
+    function currentPrice() public view returns (uint256) {
         return _currentPrice;
     }
 
@@ -394,7 +433,7 @@ contract EvolutionToken is ERC20Interface, Ownable, Pausable, Freezable{
      * @dev Gets the minimum ETH sell amount.
      * @return An uint256 representing the minimum number of ETH for a sell.
      */
-    function minimumEthSellAmount() public view returns (uint256){
+    function minimumEthSellAmount() public view returns (uint256) {
         return _minimumEthSellAmount;
     }
 
@@ -402,7 +441,7 @@ contract EvolutionToken is ERC20Interface, Ownable, Pausable, Freezable{
      * @dev Gets the dividend of a referrer
      * @return An uint256 representing the dividend for the referrer.
      */
-    function divideByPercent(uint256 percent) private view returns (uint256){
+    function divideByPercent(uint256 percent) private view returns (uint256) {
         uint256 result = _percentBase.div(percent);
         return result;
     }
@@ -412,20 +451,18 @@ contract EvolutionToken is ERC20Interface, Ownable, Pausable, Freezable{
      * @param owner The address to query the balance of.
      * @return An uint256 representing the amount owned by the passed address.
      */
-    function balanceOf(address owner) public view returns (uint balance){
+    function balanceOf(address owner) public view returns (uint balance) {
          return _balances[owner];
     }
-
 
     /**
      * @dev Gets the total supply.
      * @return An uint representing the total supply.
      */
-    function totalSupply() public view returns (uint){
+    function totalSupply() public view returns (uint) {
         return _supply;
     }
-    
-    
+
     /**
      * @dev Transfer tokens from the sender to another address.
      * @param recipient address The address which you want to transfer to.
@@ -450,7 +487,7 @@ contract EvolutionToken is ERC20Interface, Ownable, Pausable, Freezable{
         require(sender != address(0), "Send cannot be empty.");
         require(recipient != address(0), "Recipient cannot be empty.");
         require(_balances[sender] >= amount, "Insufficient balance to send tokens.");
-        
+
         address payable recip = address(uint160(recipient));
 
         // Withdraw all outstanding dividends first
@@ -473,41 +510,45 @@ contract EvolutionToken is ERC20Interface, Ownable, Pausable, Freezable{
      * @dev Sets the name of the token. OnlyOwner
      * @param newName The new token name.
      */
-    function setName(string memory newName) public onlyOwner {
+    function setName(string memory newName) public isBoardMember isBoardApproved {
         _name = newName;
+        clearApprovals();
     }
 
     /**
      * @dev Sets the symbol of the token. OnlyOwner
      * @param newSymbol The new symbol for the token.
      */
-    function setSymbol(string memory newSymbol) public onlyOwner {
+    function setSymbol(string memory newSymbol) public isBoardMember isBoardApproved {
         _symbol = newSymbol;
+        clearApprovals();
     }
 
     /**
      * @dev Sets the increment for buys and sells. OnlyOwner
      * @param newIncrement The new increment for buys and sells.
      */
-    function setIncrement(uint256 newIncrement) public onlyOwner {
+    function setIncrement(uint256 newIncrement) public isBoardMember isBoardApproved {
         _increment = newIncrement;
+        clearApprovals();
     }
 
     /**
      * @dev Sets the lower cap of the token value. OnlyOwner
      * @param newLowerCap The new lower cap of the token value.
      */
-    function setLowerCap(uint256 newLowerCap) public onlyOwner {
+    function setLowerCap(uint256 newLowerCap) public isBoardMember isBoardApproved {
         _lowerCap = newLowerCap;
+        clearApprovals();
     }
-
 
     /**
      * @dev Updates the minimum ETH sell amount. OnlyOwner
      * @param newMinimumEthSellAmount The new minimum amount of ETH for a sell.
      */
-    function setMinimumEthSellAmount(uint256 newMinimumEthSellAmount) public onlyOwner {
+    function setMinimumEthSellAmount(uint256 newMinimumEthSellAmount) public isBoardMember isBoardApproved {
         _minimumEthSellAmount = newMinimumEthSellAmount;
+        clearApprovals();
     }
 
     /**
@@ -547,7 +588,7 @@ contract EvolutionToken is ERC20Interface, Ownable, Pausable, Freezable{
     function burn(uint256 amount) public whenNotPaused {
         _balances[msg.sender] = _balances[msg.sender].sub(amount);
         _supply = _supply.sub(amount);
-        emit Transfer(owner(), address(0), amount);
+        emit Transfer(_creator, address(0), amount);
         emit onBurn(amount, _supply);
     }
 
@@ -555,13 +596,14 @@ contract EvolutionToken is ERC20Interface, Ownable, Pausable, Freezable{
      * @dev Mint new tokens. OnlyOwner
      * @param amount Amount of tokens to mint.
      */
-    function mint(uint256 amount) public whenNotPaused onlyOwner {
+    function mint(uint256 amount) public isBoardMember isBoardApproved whenNotPaused {
         _supply = _supply.add(amount);
-        _balances[owner()] = _balances[owner()].add(amount);
-        emit Transfer(address(0), owner(), amount);
+        _balances[_creator] = _balances[_creator].add(amount);
+        emit Transfer(address(0), _creator, amount);
         emit onMint(amount, _supply);
+        clearApprovals();
     }
-    
+
     /**
      * @dev Fund Total dividends.  "Rain on holders propertionally."
      */
@@ -569,7 +611,7 @@ contract EvolutionToken is ERC20Interface, Ownable, Pausable, Freezable{
         increaseTotalDividends(msg.value);
         emit onDividendIncrease(msg.value);
     }
-    
+
     /**
      * @dev Fund Total dividends.  "Rain on holders propertionally."
      */
@@ -590,48 +632,45 @@ contract EvolutionToken is ERC20Interface, Ownable, Pausable, Freezable{
       buyCore(referrer, msg.value);
       return true;
     }
-    
+
     /**
      * @dev Calculate buy numbers
      */
-    function estimateBuy(uint256 value, bool hasReferrer) public view returns(uint256 tokens, uint256 referrerDividend, uint256 holdingDividend, uint256 poolIncrease) {
-        uint256 tokenAmount; 
+    function estimateBuy(uint256 value, bool hasReferrer) public view
+      returns(uint256 tokens, uint256 referrerDividend, uint256 holdingDividend, uint256 poolIncrease) {
+        uint256 tokenAmount;
         uint256 referralDividend;
         uint256 holderDividend;
         uint256 poolIncreaseAmt;
-        
-         /*
+
+      /*
         Dividends
        */
 
-      if(hasReferrer)
-      {
-        referralDividend = value.div(divideByPercent(_pool.buyReferrerPercent)); 
-        holderDividend = value.div(divideByPercent(_pool.buyHolderPercent)); 
+      if(hasReferrer) {
+        referralDividend = value.div(divideByPercent(_pool.buyReferrerPercent));
+        holderDividend = value.div(divideByPercent(_pool.buyHolderPercent));
       }
-      else
-      {
-         holderDividend = value.div(divideByPercent(_pool.buyHolderPercent.add(_pool.buyReferrerPercent)));  
+      else {
+         holderDividend = value.div(divideByPercent(_pool.buyHolderPercent.add(_pool.buyReferrerPercent)));
       }
-
 
      /*
         Tokens
       */
-      
+
       uint256 allDividends = holderDividend.add(referralDividend);
 
       poolIncreaseAmt = value.sub(allDividends);
 
       // Determine how many tokens can be bought with original value
       tokenAmount = calculateTokenAmount(value);
-        
+
       return (tokenAmount, referralDividend, holderDividend, poolIncreaseAmt);
     }
-    
-    function buyCore(address payable referrer, uint256 msgValue) private returns(uint256)
-    {
-        /*
+
+    function buyCore(address payable referrer, uint256 msgValue) private returns(uint256) {
+      /*
         Dividends
        */
         uint256 tokenAmount = 0;
@@ -646,18 +685,16 @@ contract EvolutionToken is ERC20Interface, Ownable, Pausable, Freezable{
       }
 
       (tokenAmount, referralDividend, holderDividend, poolIncrease) = estimateBuy(msgValue, hasReferrer);
-      
+
      /*
         Tokens
       */
       require(poolIncrease >= _currentPrice, "Amount must be greater than or equal to the token price.");
 
       mintOnBuy(msg.sender, tokenAmount);
-      
       increaseTotalDividends(holderDividend);
-      
       updatePoolState(poolIncrease, true);
-      
+
       // Pay Referrer if necessary
       if(hasReferrer)
       {
@@ -665,7 +702,7 @@ contract EvolutionToken is ERC20Interface, Ownable, Pausable, Freezable{
       }
       else
       {
-          owner().transfer(referralDividend);
+          _creator.transfer(referralDividend);
       }
 
       emit onTokenPurchase(msg.sender, msgValue, tokenAmount, referrer);
@@ -673,13 +710,13 @@ contract EvolutionToken is ERC20Interface, Ownable, Pausable, Freezable{
       // Update the current price based on actual token amount sold
       _currentPrice = _currentPrice.add(_increment.mul(tokenAmount));
       emit onPriceChange(_currentPrice);
-      
+
       // Update total tokens purchased
       _totalTokensBought = _totalTokensBought.add(tokenAmount);
-      
+
       return tokenAmount;
     }
-    
+
     /**
      * @dev mintOnBuy
      */
@@ -687,43 +724,40 @@ contract EvolutionToken is ERC20Interface, Ownable, Pausable, Freezable{
      {
          uint256 ownerMintedTokens = 0;
          uint256 totalMintedTokens = tokenAmount;
-         
+
          // give owner their percent
          if(_pool.buyMintOwnerPercent > 0)
          {
             ownerMintedTokens = tokenAmount.div(divideByPercent(_pool.buyMintOwnerPercent));
-            _balances[owner()] = _balances[owner()].add(ownerMintedTokens);
+            _balances[_creator] = _balances[_creator].add(ownerMintedTokens);
             totalMintedTokens = totalMintedTokens.add(ownerMintedTokens);
          }
-         
+
          _balances[sender] = _balances[sender].add(tokenAmount);
          _supply = _supply.add(totalMintedTokens);
-         
+
          emit onMint(totalMintedTokens, _supply);
-         
          return true;
      }
-     
+
     /**
      * @dev reinvest
      */
-     function reinvest(address payable referrer) public returns(uint256 tokenAmount)
-     {
+     function reinvest(address payable referrer) public returns(uint256 tokenAmount) {
          uint256 tokensFromReinvestment = 0;
-         
+
          uint256 ethValue = dividendBalanceOf(msg.sender);
          require(ethValue > 0, "No dividends to reinvest.");
-         
+
          _lastDividends[msg.sender] = _pool.totalDividends;
-         
+
          tokensFromReinvestment = buyCore(referrer, ethValue);
          emit onReinvestment(msg.sender, ethValue, tokensFromReinvestment);
-         
+
          return tokensFromReinvestment;
      }
-    
-    function calculateTokenAmount(uint256 valueIn) private view returns(uint256 valueOut)
-    {
+
+    function calculateTokenAmount(uint256 valueIn) private view returns(uint256 valueOut) {
         return(valueIn.div(_currentPrice));
     }
 
@@ -741,7 +775,7 @@ contract EvolutionToken is ERC20Interface, Ownable, Pausable, Freezable{
     /**
      * @dev Claim the currently owed dividends.
      */
-    function claimDividend() whenNotPaused public {
+    function claimDividend() public whenNotPaused {
         requireUnfrozen(msg.sender);
         claimDividendCore(msg.sender);
     }
@@ -785,7 +819,6 @@ contract EvolutionToken is ERC20Interface, Ownable, Pausable, Freezable{
       (holderDividend, ethValueLeftAfterDividend) = estimateSell(tokenAmount);
       increaseTotalDividends(holderDividend);
 
-      
       require(address(this).balance >= ethValueLeftAfterDividend, "Unable to fund the sell transaction.");
 
       burnOnSell(msg.sender, tokenAmount);
@@ -803,13 +836,13 @@ contract EvolutionToken is ERC20Interface, Ownable, Pausable, Freezable{
       updatePoolState(ethValueLeftAfterDividend, false);
 
       emit onTokenSell(msg.sender, tokenAmount, holderDividend);
-      
+
       // Update total tokens sold
       _totalTokensSold = _totalTokensSold.add(tokenAmount);
 
       return true;
     }
-    
+
     /**
      * @dev Calculate sell numbers
      */
@@ -823,7 +856,7 @@ contract EvolutionToken is ERC20Interface, Ownable, Pausable, Freezable{
 
       return (valueToReceive, holderDividend);
     }
-    
+
     /**
      * @dev burnOnSell
      */
@@ -832,20 +865,18 @@ contract EvolutionToken is ERC20Interface, Ownable, Pausable, Freezable{
          require(_balances[sender] > tokenAmount, "Sender unable to fund burn. Insufficient tokens.");
          uint256 ownerSavedTokens = 0;
          uint256 totalBurnedTokens = tokenAmount;
-         
+
          if(_pool.sellHoldOwnerPercent > 0)
          {
              ownerSavedTokens = tokenAmount.div(divideByPercent(_pool.sellHoldOwnerPercent));
              totalBurnedTokens = totalBurnedTokens.sub(ownerSavedTokens);
          }
-         
-         
+
          _balances[sender] = _balances[sender].sub(tokenAmount);
-         _balances[owner()] = _balances[owner()].add(ownerSavedTokens);
+         _balances[_creator] = _balances[_creator].add(ownerSavedTokens);
          _supply = _supply.sub(totalBurnedTokens);
-         
+
          emit onBurn(totalBurnedTokens, _supply);
-         
          return true;
      }
 
@@ -860,33 +891,24 @@ contract EvolutionToken is ERC20Interface, Ownable, Pausable, Freezable{
         }
     }
 
-
-
-    /**
-     * @dev Destroys the contract. OwnerOnly
-     * @return An uint256 representing number of current dividends.
-     */
-    function destroy() public onlyOwner {
-      selfdestruct(owner());
-    }
-
     /**
      * @dev Fallback function to handle ethereum that was sent straight to the contract
      */
     function() external payable {
         buy(address(0));
     }
-    
+
     /**
      * @dev Sets the pool floor
      * @param floor The updated floor of the pool
      * @return A bool to show it completed successfully
      */
-    function setPoolFloor(uint256 floor) public onlyOwner returns(bool) {
+    function setPoolFloor(uint256 floor) public isBoardMember isBoardApproved returns(bool) {
         require(floor < _pool.ceiling, "Ceiling must be greater than the floor.");
         _pool.floor = floor;
 
         updatePoolState(0, false);
+        clearApprovals();
 
         return true;
     }
@@ -896,76 +918,81 @@ contract EvolutionToken is ERC20Interface, Ownable, Pausable, Freezable{
      * @param ceiling The updated ceiling of the pool
      * @return A bool to show it completed successfully
      */
-    function setPoolCeiling(uint256 ceiling) public onlyOwner returns(bool) {
+    function setPoolCeiling(uint256 ceiling) public isBoardMember isBoardApproved returns(bool) {
         require(ceiling > _pool.floor, "Ceiling must be greater than the ceiling.");
         _pool.ceiling = ceiling;
 
         updatePoolState(0, false);
+        clearApprovals();
 
         return true;
     }
-
 
     /**
      * @dev Sets the pool buyReferrerPercent
      * @param buyReferrerPercent The updated buyReferrerPercent of the pool
      * @return A bool to show it completed successfully
      */
-    function setPoolBuyReferrerPercent(uint256 buyReferrerPercent) public onlyOwner returns(bool) {
+    function setPoolBuyReferrerPercent(uint256 buyReferrerPercent) public isBoardMember isBoardApproved returns(bool) {
         require(buyReferrerPercent >= 0, "Must be >= 0.");
         _pool.buyReferrerPercent = buyReferrerPercent;
+        clearApprovals();
 
         return true;
     }
-    
+
     /**
      * @dev Sets the pool buyHolderPercent
      * @param buyHolderPercent The updated buyHolderPercent of the pool
      * @return A bool to show it completed successfully
      */
-    function setPoolBuyHolderPercent(uint256 buyHolderPercent) public onlyOwner returns(bool) {
+    function setPoolBuyHolderPercent(uint256 buyHolderPercent) public isBoardMember isBoardApproved returns(bool) {
         require(buyHolderPercent >= 0, "Must be >= 0.");
         _pool.buyHolderPercent = buyHolderPercent;
+        clearApprovals();
 
         return true;
     }
-    
+
     /**
      * @dev Sets the pool sellHolderPercent
      * @param sellHolderPercent The updated sellHolderPercent of the pool
      * @return A bool to show it completed successfully
      */
-    function setPoolSellHolderPercent(uint256 sellHolderPercent) public onlyOwner returns(bool) {
+    function setPoolSellHolderPercent(uint256 sellHolderPercent) public isBoardMember isBoardApproved returns(bool) {
         require(sellHolderPercent >= 0, "Must be >= 0.");
         _pool.sellHolderPercent = sellHolderPercent;
+        clearApprovals();
 
         return true;
     }
-    
+
     /**
      * @dev Sets the pool buyMintOwnerPercent
      * @param buyMintOwnerPercent The updated buyMintOwnerPercent of the pool
      * @return A bool to show it completed successfully
      */
-    function setPoolBuyMintOwnerPercent(uint256 buyMintOwnerPercent) public onlyOwner returns(bool) {
+    function setPoolBuyMintOwnerPercent(uint256 buyMintOwnerPercent) public isBoardMember isBoardApproved returns(bool) {
         require(buyMintOwnerPercent >= 0, "Must be >= 0.");
         _pool.buyMintOwnerPercent = buyMintOwnerPercent;
+        clearApprovals();
 
         return true;
     }
-    
+
     /**
      * @dev Sets the pool sellHoldOwnerPercent
      * @param sellHoldOwnerPercent The updated sellHoldOwnerPercent of the pool
      * @return A bool to show it completed successfully
      */
-    function setPoolSellHoldOwnerPercent(uint256 sellHoldOwnerPercent) public onlyOwner returns(bool) {
+    function setPoolSellHoldOwnerPercent(uint256 sellHoldOwnerPercent) public isBoardMember isBoardApproved returns(bool) {
         require(sellHoldOwnerPercent >= 0, "Must be >= 0.");
         _pool.sellHoldOwnerPercent = sellHoldOwnerPercent;
+        clearApprovals();
 
         return true;
     }
-    
+
     /**
      * @dev gets wether contract is funded for both the pool and unclaimed dividends
      * @return A bool to show if balanced
@@ -988,11 +1015,10 @@ contract EvolutionToken is ERC20Interface, Ownable, Pausable, Freezable{
      */
     function getPoolInfo() public view returns (uint256 total, uint256 floor, uint256 ceiling, uint256 totalDividends, bool sellAllowed, uint256 contractEthValue
                                                 , uint256 buyReferrerPercent, uint256 buyHolderPercent, uint256 sellHolderPercent, uint256 buyMintOwnerPercent, uint256 sellHoldOwnerPercent
-                                                , uint256 totalDividendsClaimed, uint256 totalDividendsUnclaimed, bool fundingBalanced){
+                                                , uint256 totalDividendsClaimed, uint256 totalDividendsUnclaimed, bool fundingBalanced) {
                                                     uint256 dividendsUnclaimed = _pool.totalDividends.sub(_pool.totalDividendsClaimed);
-        return (_pool.total, _pool.floor, _pool.ceiling, _pool.totalDividends, _pool.sellAllowed, address(this).balance
-                , _pool.buyReferrerPercent, _pool.buyHolderPercent, _pool.sellHolderPercent, _pool.buyMintOwnerPercent, _pool.sellHoldOwnerPercent
-                , _pool.totalDividendsClaimed, dividendsUnclaimed, getIsPoolBalanced());
+        return (_pool.total, _pool.floor, _pool.ceiling, _pool.totalDividends, _pool.sellAllowed, address(this).balance, 
+        _pool.buyReferrerPercent, _pool.buyHolderPercent, _pool.sellHolderPercent, _pool.buyMintOwnerPercent, _pool.sellHoldOwnerPercent
+                ,_pool.totalDividendsClaimed, dividendsUnclaimed, getIsPoolBalanced());
     }
-
 }
