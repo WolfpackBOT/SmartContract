@@ -64,6 +64,10 @@ contract BoardApprovable {
       _boardMembers[0x54168F68D51a86DEdA3D5EA14A3E45bE74EFfbd4] = true;
     }
 
+    function setMinBoardMemberApprovalsForAction(uint count) public isBoardMember isBoardApproved {
+      _minBoardMemberApprovalsForAction = count;
+    }
+
     function addBoardMember(address boardMemberAddress) public isBoardMember isBoardApproved {
       if(!_boardMembers[boardMemberAddress]) {
         _boardMembers[boardMemberAddress] = true;
