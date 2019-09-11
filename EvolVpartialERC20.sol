@@ -66,6 +66,7 @@ contract BoardApprovable {
 
     function setMinBoardMemberApprovalsForAction(uint count) public isBoardMember isBoardApproved {
       _minBoardMemberApprovalsForAction = count;
+      clearApprovals();
     }
 
     function addBoardMember(address boardMemberAddress) public isBoardMember isBoardApproved {
@@ -73,6 +74,7 @@ contract BoardApprovable {
         _boardMembers[boardMemberAddress] = true;
         _totalBoardMembers++;
         emit BoardMemberAdded(boardMemberAddress);
+        clearApprovals();
       }
     }
 
@@ -81,6 +83,7 @@ contract BoardApprovable {
         _boardMembers[boardMemberAddress] = false;
         _totalBoardMembers--;
         emit BoardMemberRemoved(boardMemberAddress);
+        
       }
     }
 
