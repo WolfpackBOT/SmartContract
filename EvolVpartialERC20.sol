@@ -71,6 +71,9 @@ contract BoardApprovable {
   }
 
   function setMinBoardMemberApprovalsForAction(uint count) external isBoardMember isBoardApproved {
+    require(count <= _totalBoardMembers, "Count cannot exceed total board member count");
+    require(count > 0, "Count cannot equal zero");
+
     _minBoardMemberApprovalsForAction = count;
   }
 
@@ -82,10 +85,16 @@ contract BoardApprovable {
     }
   }
 
-  function removeBoardMember(address boardMemberAddress) external isBoardMember isBoardApproved {
+  function removeBoardMember(address boardMemberAddress, uint newMinBoardMemberApprovalsForAction) external isBoardMember isBoardApproved {
+    require(_totalBoardMembers > 1, "Cannot remove the last board member");
+    require(newMinBoardMemberApprovalsForAction <= _totalBoardMembers - 1, "Count cannot exceed total board member count once removed");
+    require(newMinBoardMemberApprovalsForAction > 0, "Count cannot equal zero");
+
     if(_boardMembers[boardMemberAddress]) {
       _boardMembers[boardMemberAddress] = false;
       _totalBoardMembers--;
+
+      _minBoardMemberApprovalsForAction = newMinBoardMemberApprovalsForAction;
       emit BoardMemberRemoved(boardMemberAddress);
     }
   }
@@ -109,6 +118,10 @@ contract BoardApprovable {
 
   function isSenderBoardMember() external view returns(bool) {
     return _boardMembers[msg.sender];
+  }
+
+  function isSenderBoardMemberApproved() external view returns(bool) {
+    return _boardMemberVoted[_mappingVersion][msg.sender];
   }
 
   /**
