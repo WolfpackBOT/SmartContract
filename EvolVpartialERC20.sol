@@ -71,29 +71,32 @@ contract BoardApprovable {
   }
 
   function setMinBoardMemberApprovalsForAction(uint count) external isBoardMember isBoardApproved {
+    require(count > 0, "Count must be greater than zero");
     require(count <= _totalBoardMembers, "Count cannot exceed total board member count");
-    require(count > 0, "Count cannot equal zero");
 
     _minBoardMemberApprovalsForAction = count;
   }
 
-  function addBoardMember(address boardMemberAddress) external isBoardMember isBoardApproved {
+  function addBoardMember(address boardMemberAddress, uint newMinBoardMemberApprovalsForAction) external isBoardMember isBoardApproved {
+    require(newMinBoardMemberApprovalsForAction > 0, "Count must be greater than zero");
+    require(newMinBoardMemberApprovalsForAction <= _totalBoardMembers + 1, "Count cannot exceed total board member count once added");
+
     if(!_boardMembers[boardMemberAddress]) {
       _boardMembers[boardMemberAddress] = true;
       _totalBoardMembers++;
+      _minBoardMemberApprovalsForAction = newMinBoardMemberApprovalsForAction;
       emit BoardMemberAdded(boardMemberAddress);
     }
   }
 
   function removeBoardMember(address boardMemberAddress, uint newMinBoardMemberApprovalsForAction) external isBoardMember isBoardApproved {
     require(_totalBoardMembers > 1, "Cannot remove the last board member");
+    require(newMinBoardMemberApprovalsForAction > 0, "Count must be greater than zero");
     require(newMinBoardMemberApprovalsForAction <= _totalBoardMembers - 1, "Count cannot exceed total board member count once removed");
-    require(newMinBoardMemberApprovalsForAction > 0, "Count cannot equal zero");
 
     if(_boardMembers[boardMemberAddress]) {
       _boardMembers[boardMemberAddress] = false;
       _totalBoardMembers--;
-
       _minBoardMemberApprovalsForAction = newMinBoardMemberApprovalsForAction;
       emit BoardMemberRemoved(boardMemberAddress);
     }
