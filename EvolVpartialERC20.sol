@@ -63,14 +63,15 @@ contract BoardApprovable {
   * @dev BoardApprovable constructor
   */
   constructor() internal {
-    _totalBoardMembers = 4;
+    _totalBoardMembers = 5;
     _minBoardMemberApprovalsForAction = 3;
 
     // Load the default board members
+    _boardMembers[0xE242CeF45608826216f7cA2d548c48562b50CdD0] = true; // pl
+    _boardMembers[0x7B5973D4F41Af6bA50e2feD457d7c91D5A33349C] = true; // rp
     _boardMembers[0x54168F68D51a86DEdA3D5EA14A3E45bE74EFfbd4] = true; // jm
     _boardMembers[0x6102dB8E1d47D359CafF9ADa4f0b0a8378d35109] = true; // dj
     _boardMembers[0xaBE5EE06B246e23d69ffb44F6d5996686b69ce3b] = true; // rg
-    _boardMembers[0x7B5973D4F41Af6bA50e2feD457d7c91D5A33349C] = true; // rp
   }
 
   function setMinBoardMemberApprovalsForAction(uint count) external isBoardMember isBoardApproved {
