@@ -63,11 +63,14 @@ contract BoardApprovable {
   * @dev BoardApprovable constructor
   */
   constructor() internal {
-    // 1 for testing, but should likely be 3
-    _minBoardMemberApprovalsForAction = 1;
+    _totalBoardMembers = 4;
+    _minBoardMemberApprovalsForAction = 3;
 
     // Load the default board members
-    _boardMembers[0x54168F68D51a86DEdA3D5EA14A3E45bE74EFfbd4] = true;
+    _boardMembers[0x54168F68D51a86DEdA3D5EA14A3E45bE74EFfbd4] = true; // jm
+    _boardMembers[0x6102dB8E1d47D359CafF9ADa4f0b0a8378d35109] = true; // dj
+    _boardMembers[0xaBE5EE06B246e23d69ffb44F6d5996686b69ce3b] = true; // rg
+    _boardMembers[0x7B5973D4F41Af6bA50e2feD457d7c91D5A33349C] = true; // rp
   }
 
   function setMinBoardMemberApprovalsForAction(uint count) external isBoardMember isBoardApproved {
@@ -127,12 +130,17 @@ contract BoardApprovable {
     return _boardMemberVoted[_mappingVersion][msg.sender];
   }
 
+  function approvalCount() external view returns(uint) {
+    return _mappingVersion;
+  }
+
   /**
   * @dev Gets the current board status
   * @return Properties related to the board status.
   */
-  function getBoardStatus() external view returns (bool approved, uint approvedCount, uint totalBoardMembers) {
-    return (_boardMemberApprovedCount >= _minBoardMemberApprovalsForAction, _boardMemberApprovedCount, _totalBoardMembers);
+  function getBoardStatus() external view returns (bool, uint, uint, uint) {
+    return (_boardMemberApprovedCount >= _minBoardMemberApprovalsForAction, _boardMemberApprovedCount,
+        _totalBoardMembers, _minBoardMemberApprovalsForAction);
   }
 
   function clearApprovals() public isBoardMember {
@@ -394,7 +402,9 @@ contract EvolutionToken is ERC20Interface, BoardApprovable, Pausable, Freezable 
     _increment = .000000001 ether;
     _lowerCap = .0000053 ether;
     _minimumEthSellAmount = .01 ether;
-    _percentBase = 100; // _percentBase.div(uint256) will return a whole integer percentage value you can divide large numbers with
+
+    // _percentBase.div(uint256) will return a whole integer percentage value you can divide large numbers with
+    _percentBase = 100;
 
     // Give founder all supply
     _balances[_creator] = _supply;
@@ -441,6 +451,22 @@ contract EvolutionToken is ERC20Interface, BoardApprovable, Pausable, Freezable 
   }
 
   /**
+  * @dev Gets the price increment for the token
+  * @return An uint256 representing the price increment for the token.
+  */
+  function increment() external view returns (uint256) {
+    return _increment;
+  }
+
+  /**
+  * @dev Gets the lower cap price of the token
+  * @return An uint256 representing the lower cap price of the token.
+  */
+  function lowerCap() external view returns (uint256) {
+    return _lowerCap;
+  }
+
+  /**
   * @dev Gets the total accumilated dividends.
   * @return An uint256 representing number of current dividends.
   */
@@ -482,12 +508,11 @@ contract EvolutionToken is ERC20Interface, BoardApprovable, Pausable, Freezable 
   }
 
   /**
-  * @dev Transfer tokens from the sender to another address.
+  * @dev ERC20 function to transfer tokens from the sender to another address.
   * @param recipient address The address which you want to transfer to.
   * @param amount uint256 the amount of tokens to be transferred.
   * @return Bool success
   */
-  // ERC20
   function transfer(address recipient, uint256 amount) external whenNotPaused  returns (bool) {
     return transferCore(msg.sender, recipient, amount);
   }
