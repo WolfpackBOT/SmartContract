@@ -194,7 +194,7 @@ contract BoardApprovable {
   }
 
   function clearApprovals() public isBoardMember {
-    _mappingVersion++;
+    _mappingVersion = _mappingVersion.add(1);
     _boardMemberApprovedCount = 0;
   }
 }
