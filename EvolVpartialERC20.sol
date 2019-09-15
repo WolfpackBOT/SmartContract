@@ -782,9 +782,9 @@ contract EvolutionToken is ERC20Interface, BoardApprovable, Pausable, Freezable 
 
     claimDividendByAddress(msg.sender);
 
-    uint256 holderDividend = 0;
     uint256 ethValueLeftAfterDividend = 0;
-    (holderDividend, ethValueLeftAfterDividend) = estimateSell(tokenAmount);
+    uint256 holderDividend = 0;
+    (ethValueLeftAfterDividend, holderDividend) = estimateSell(tokenAmount);
     increaseTotalDividends(holderDividend);
 
     require(address(this).balance >= ethValueLeftAfterDividend, "Unable to fund the sell transaction.");
@@ -1003,7 +1003,7 @@ contract EvolutionToken is ERC20Interface, BoardApprovable, Pausable, Freezable 
   * @dev burnOnSell
   */
   function burnOnSell(address sender, uint256 tokenAmount) private returns(bool) {
-    require(_balances[sender] > tokenAmount, "Sender unable to fund burn. Insufficient tokens.");
+    require(_balances[sender] >= tokenAmount, "Sender unable to fund burn. Insufficient tokens.");
     uint256 ownerSavedTokens = 0;
     uint256 totalBurnedTokens = tokenAmount;
 
