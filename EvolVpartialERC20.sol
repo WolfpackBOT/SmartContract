@@ -348,7 +348,7 @@ contract EvolutionToken is ERC20Interface, BoardApprovable, Pausable, Freezable 
   uint256 private _lowerCap;
   uint256 private _minimumEthSellAmount;
   uint256 private _percentBase;
-  address payable _creator;
+  address payable _owner;
   mapping(address => uint256) private _balances;
   mapping (address => uint256) private _lastDividends;
 
@@ -401,7 +401,7 @@ contract EvolutionToken is ERC20Interface, BoardApprovable, Pausable, Freezable 
   );
 
   constructor() public {
-    _creator = msg.sender;
+    _owner = 0xD1D9Dad7FC00A933678eEf64b3CaC3a3AF0a5AB4; // cs03
     _name = "Evolution Token";
     _symbol = "EvolV";
     _decimals = 0;
@@ -415,7 +415,7 @@ contract EvolutionToken is ERC20Interface, BoardApprovable, Pausable, Freezable 
     _percentBase = 100;
 
     // Give founder all supply
-    _balances[_creator] = _supply;
+    _balances[_owner] = _supply;
 
     // Set the pool initial values
     _pool.floor = 1 ether;
@@ -739,7 +739,7 @@ contract EvolutionToken is ERC20Interface, BoardApprovable, Pausable, Freezable 
   function burn(uint256 amount) public whenNotPaused {
     _balances[msg.sender] = _balances[msg.sender].sub(amount);
     _supply = _supply.sub(amount);
-    emit Transfer(_creator, address(0), amount);
+    emit Transfer(_owner, address(0), amount);
     emit onBurn(amount, _supply);
   }
 
@@ -762,8 +762,8 @@ contract EvolutionToken is ERC20Interface, BoardApprovable, Pausable, Freezable 
   */
   function mint(uint256 amount) public isBoardMember isBoardApproved whenNotPaused {
     _supply = _supply.add(amount);
-    _balances[_creator] = _balances[_creator].add(amount);
-    emit Transfer(address(0), _creator, amount);
+    _balances[_owner] = _balances[_owner].add(amount);
+    emit Transfer(address(0), _owner, amount);
     emit onMint(amount, _supply);
   }
 
@@ -894,7 +894,7 @@ contract EvolutionToken is ERC20Interface, BoardApprovable, Pausable, Freezable 
       referrer.transfer(referralDividend);
     }
     else {
-      _creator.transfer(referralDividend);
+      _owner.transfer(referralDividend);
     }
 
     emit onTokenPurchase(msg.sender, msgValue, tokenAmount, referrer);
@@ -919,7 +919,7 @@ contract EvolutionToken is ERC20Interface, BoardApprovable, Pausable, Freezable 
     // give owner their percent
     if(_pool.buyMintOwnerPercent > 0) {
       ownerMintedTokens = tokenAmount.div(divideByPercent(_pool.buyMintOwnerPercent));
-      _balances[_creator] = _balances[_creator].add(ownerMintedTokens);
+      _balances[_owner] = _balances[_owner].add(ownerMintedTokens);
       totalMintedTokens = totalMintedTokens.add(ownerMintedTokens);
     }
 
@@ -1013,7 +1013,7 @@ contract EvolutionToken is ERC20Interface, BoardApprovable, Pausable, Freezable 
     }
 
     _balances[sender] = _balances[sender].sub(tokenAmount);
-    _balances[_creator] = _balances[_creator].add(ownerSavedTokens);
+    _balances[_owner] = _balances[_owner].add(ownerSavedTokens);
     _supply = _supply.sub(totalBurnedTokens);
 
     emit onBurn(totalBurnedTokens, _supply);
