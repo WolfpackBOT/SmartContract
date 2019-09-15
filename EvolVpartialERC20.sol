@@ -15,6 +15,48 @@ pragma solidity ^0.5.1;
 
 */
 
+library SafeMath {
+
+  /**
+  * @dev Multiplies two numbers, throws on overflow.
+  */
+  function mul(uint256 a, uint256 b) internal pure returns (uint256) {
+    if (a == 0) {
+      return 0;
+    }
+    uint256 c = a * b;
+    assert(c / a == b);
+    return c;
+  }
+
+  /**
+  * @dev Integer division of two numbers, truncating the quotient.
+  */
+  function div(uint256 a, uint256 b) internal pure returns (uint256) {
+    // assert(b > 0); // Solidity automatically throws when dividing by 0
+    uint256 c = a / b;
+    // assert(a == b * c + a % b); // There is no case in which this doesn't hold
+    return c;
+  }
+
+  /**
+  * @dev Subtracts two numbers, throws on overflow (i.e. if subtrahend is greater than minuend).
+  */
+  function sub(uint256 a, uint256 b) internal pure returns (uint256) {
+    assert(b <= a);
+    return a - b;
+  }
+
+  /**
+  * @dev Adds two numbers, throws on overflow.
+  */
+  function add(uint256 a, uint256 b) internal pure returns (uint256) {
+    uint256 c = a + b;
+    assert(c >= a);
+    return c;
+  }
+}
+
 contract ERC20Interface {
   function transfer(address to, uint256 value) external returns (bool);
   function totalSupply() external view returns (uint256);
@@ -23,6 +65,13 @@ contract ERC20Interface {
 }
 
 contract BoardApprovable {
+  using SafeMath for uint;
+  using SafeMath for uint8;
+  using SafeMath for uint32;
+  using SafeMath for uint64;
+  using SafeMath for uint128;
+  using SafeMath for uint256;
+
   uint private _totalBoardMembers;
   uint private _boardMemberApprovedCount;
   uint private _minBoardMemberApprovalsForAction;
@@ -83,11 +132,11 @@ contract BoardApprovable {
 
   function addBoardMember(address boardMemberAddress, uint newMinBoardMemberApprovalsForAction) external isBoardMember isBoardApproved {
     require(newMinBoardMemberApprovalsForAction > 0, "Count must be greater than zero");
-    require(newMinBoardMemberApprovalsForAction <= _totalBoardMembers + 1, "Count cannot exceed total board member count once added");
+    require(newMinBoardMemberApprovalsForAction <= _totalBoardMembers.add(1), "Count cannot exceed total board member count once added");
 
     if(!_boardMembers[boardMemberAddress]) {
       _boardMembers[boardMemberAddress] = true;
-      _totalBoardMembers++;
+      _totalBoardMembers = _totalBoardMembers.add(1);
       _minBoardMemberApprovalsForAction = newMinBoardMemberApprovalsForAction;
       emit BoardMemberAdded(boardMemberAddress);
     }
@@ -96,11 +145,11 @@ contract BoardApprovable {
   function removeBoardMember(address boardMemberAddress, uint newMinBoardMemberApprovalsForAction) external isBoardMember isBoardApproved {
     require(_totalBoardMembers > 1, "Cannot remove the last board member");
     require(newMinBoardMemberApprovalsForAction > 0, "Count must be greater than zero");
-    require(newMinBoardMemberApprovalsForAction <= _totalBoardMembers - 1, "Count cannot exceed total board member count once removed");
+    require(newMinBoardMemberApprovalsForAction <= _totalBoardMembers.sub(1), "Count cannot exceed total board member count once removed");
 
     if(_boardMembers[boardMemberAddress]) {
       _boardMembers[boardMemberAddress] = false;
-      _totalBoardMembers--;
+      _totalBoardMembers = _totalBoardMembers.sub(1);
       _minBoardMemberApprovalsForAction = newMinBoardMemberApprovalsForAction;
       emit BoardMemberRemoved(boardMemberAddress);
     }
@@ -110,14 +159,14 @@ contract BoardApprovable {
     if(approved) {
       if(!_boardMemberVoted[_mappingVersion][msg.sender]) {
         _boardMemberVoted[_mappingVersion][msg.sender] = approved;
-        _boardMemberApprovedCount++;
+        _boardMemberApprovedCount = _boardMemberApprovedCount.add(1);
         emit BoardMemberApprovalAdded(msg.sender, approved);
       }
     } else {
     // Remove previous approval if it exists
     if(_boardMemberVoted[_mappingVersion][msg.sender]) {
         _boardMemberVoted[_mappingVersion][msg.sender] = approved;
-        _boardMemberApprovedCount--;
+        _boardMemberApprovedCount = _boardMemberApprovedCount.sub(1);
         emit BoardMemberApprovalAdded(msg.sender, approved);
       }
     }
@@ -263,48 +312,6 @@ contract Pausable is BoardApprovable {
   function unpause() external isBoardMember isBoardApproved whenPaused {
     _paused = false;
     emit Unpaused(msg.sender);
-  }
-}
-
-library SafeMath {
-
-  /**
-  * @dev Multiplies two numbers, throws on overflow.
-  */
-  function mul(uint256 a, uint256 b) internal pure returns (uint256) {
-    if (a == 0) {
-      return 0;
-    }
-    uint256 c = a * b;
-    assert(c / a == b);
-    return c;
-  }
-
-  /**
-  * @dev Integer division of two numbers, truncating the quotient.
-  */
-  function div(uint256 a, uint256 b) internal pure returns (uint256) {
-    // assert(b > 0); // Solidity automatically throws when dividing by 0
-    uint256 c = a / b;
-    // assert(a == b * c + a % b); // There is no case in which this doesn't hold
-    return c;
-  }
-
-  /**
-  * @dev Subtracts two numbers, throws on overflow (i.e. if subtrahend is greater than minuend).
-  */
-  function sub(uint256 a, uint256 b) internal pure returns (uint256) {
-    assert(b <= a);
-    return a - b;
-  }
-
-  /**
-  * @dev Adds two numbers, throws on overflow.
-  */
-  function add(uint256 a, uint256 b) internal pure returns (uint256) {
-    uint256 c = a + b;
-    assert(c >= a);
-    return c;
   }
 }
 
