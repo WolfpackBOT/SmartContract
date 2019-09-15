@@ -97,7 +97,7 @@ contract BoardApprovable {
   );
 
   modifier isBoardMember() {
-    require(_boardMembers[msg.sender], "Not a board member");
+    assert(_boardMembers[msg.sender]);
     _;
   }
 
