@@ -960,19 +960,14 @@ contract EvolutionToken is ERC20Interface, BoardApprovable, Pausable, Freezable 
     require(sender != address(0), "Send cannot be empty.");
     require(recipient != address(0), "Recipient cannot be empty.");
     require(_balances[sender] >= amount, "Insufficient balance to send tokens.");
+    require(sender != recipient, "Attempted to send tokens to same address.");
 
     address payable recip = address(uint160(recipient));
 
     // Withdraw all outstanding dividends first
-    uint256 senderOwing = dividendBalanceOf(sender);
-    if (senderOwing > 0) {
       claimDividendByAddress(sender);
-    }
-
-    uint256 recipOwing = dividendBalanceOf(recip);
-    if (recipOwing > 0) {
       claimDividendByAddress(recip);
-    }
+
 
     _balances[sender] = _balances[sender].sub(amount);
     _balances[recipient] = _balances[recipient].add(amount);
