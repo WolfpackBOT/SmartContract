@@ -991,9 +991,9 @@ contract EvolutionToken is ERC20Interface, BoardApprovable, Pausable, Freezable 
   function claimDividendCore(address payable sender) private whenNotPaused {
     uint256 owing = dividendBalanceOf(sender);
     require(_pool.totalDividendsClaimed.add(owing) <= _pool.totalDividends, "Unable to fund dividend claim.");
+    _lastDividends[sender] = _pool.totalDividends; // Must always execute even if no funds are claimed
     if (owing > 0) {
       sender.transfer(owing);
-      _lastDividends[sender] = _pool.totalDividends;
       _pool.totalDividendsClaimed = _pool.totalDividendsClaimed.add(owing);
       emit onClaimDividend(sender, owing);
     }
