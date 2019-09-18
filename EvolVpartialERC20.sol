@@ -516,6 +516,22 @@ contract EvolutionToken is ERC20Interface, BoardApprovable, Pausable, Freezable 
   }
 
   /**
+  * @dev Gets the total tokens sold.
+  * @return An uint representing the total tokens sold.
+  */
+  function totalTokensSold() external view returns (uint) {
+    return _totalTokensSold;
+  }
+
+  /**
+  * @dev Gets the total tokens bought.
+  * @return An uint representing the total tokens bought.
+  */
+  function totalTokensBought() external view returns (uint) {
+    return _totalTokensBought;
+  }
+
+  /**
   * @dev ERC20 function to transfer tokens from the sender to another address.
   * @param recipient address The address which you want to transfer to.
   * @param amount uint256 the amount of tokens to be transferred.
@@ -706,8 +722,7 @@ contract EvolutionToken is ERC20Interface, BoardApprovable, Pausable, Freezable 
   /**
   * @dev Calculate buy numbers
   */
-  function estimateBuy(uint256 value, bool hasReferrer) public view
-  returns(uint256 tokens, uint256 referrerDividend, uint256 holdingDividend, uint256 poolIncrease) {
+  function estimateBuy(uint256 value, bool hasReferrer) public view returns(uint256, uint256, uint256, uint256) {
     uint256 tokenAmount;
     uint256 referralDividend;
     uint256 holderDividend;
@@ -770,26 +785,32 @@ contract EvolutionToken is ERC20Interface, BoardApprovable, Pausable, Freezable 
   /**
   * @dev Sells an amount of tokens, and triggers a dividend.
   * @param tokenAmount Amount of tokens to sell.
-  * @return Bool success
+  * @return bool success
   */
   function sell(uint256 tokenAmount) public whenNotPaused returns (bool) {
     requireUnfrozen(msg.sender);
     require(_pool.sellAllowed, "Sell is not yet allowed.");
     require(tokenAmount > 0, "Must sell an amount greater than 0.");
 
-    uint256 ethValue = tokenAmount.mul(_currentPrice);
-    require(ethValue >= _minimumEthSellAmount, "Transaction minimum not met.");
-
-    claimDividendByAddress(msg.sender);
-
     uint256 ethValueLeftAfterDividend = 0;
     uint256 holderDividend = 0;
+    uint256 ethValue = tokenAmount.mul(_currentPrice);
+    require(ethValue >= _minimumEthSellAmount, "Transaction minimum not met.");
+    
+    // Get current unpaid dividends
+    uint256 owing = dividendBalanceOf(msg.sender);
+
     (ethValueLeftAfterDividend, holderDividend) = estimateSell(tokenAmount);
+    uint256 unclaimed = _pool.totalDividends.sub(_pool.totalDividendsClaimed);
+    uint256 totalRequired = ethValueLeftAfterDividend.add(unclaimed);
+    require(address(this).balance >= totalRequired, "Unable to fund the sell transaction.");
+
     increaseTotalDividends(holderDividend);
 
-    require(address(this).balance >= ethValueLeftAfterDividend, "Unable to fund the sell transaction.");
-
     burnOnSell(msg.sender, tokenAmount);
+
+    // Don't give the seller the dividend
+    _lastDividends[msg.sender] = _pool.totalDividends.sub(owing);
 
     // Update the current price based on actual token amount sold
     _currentPrice = _currentPrice.sub(_increment.mul(tokenAmount));
@@ -800,7 +821,10 @@ contract EvolutionToken is ERC20Interface, BoardApprovable, Pausable, Freezable 
 
     emit onPriceChange(_currentPrice);
 
-    msg.sender.transfer(ethValueLeftAfterDividend);
+    if(msg.sender != _owner) {
+      msg.sender.transfer(ethValueLeftAfterDividend);
+    }
+
     updatePoolState(ethValueLeftAfterDividend, false);
 
     emit onTokenSell(msg.sender, tokenAmount, holderDividend);
@@ -943,8 +967,7 @@ contract EvolutionToken is ERC20Interface, BoardApprovable, Pausable, Freezable 
   * @return An uint256 representing the dividend for the referrer.
   */
   function divideByPercent(uint256 percent) private view returns (uint256) {
-    uint256 result = _percentBase.div(percent);
-    return result;
+    return _percentBase.div(percent);
   }
 
   /**
@@ -965,9 +988,8 @@ contract EvolutionToken is ERC20Interface, BoardApprovable, Pausable, Freezable 
     address payable recip = address(uint160(recipient));
 
     // Withdraw all outstanding dividends first
-      claimDividendByAddress(sender);
-      claimDividendByAddress(recip);
-
+    claimDividendByAddress(sender);
+    claimDividendByAddress(recip);
 
     _balances[sender] = _balances[sender].sub(amount);
     _balances[recipient] = _balances[recipient].add(amount);
@@ -978,12 +1000,12 @@ contract EvolutionToken is ERC20Interface, BoardApprovable, Pausable, Freezable 
  /**
   * @dev Claim the currently owed dividends.
   */
-  function claimDividendByAddress(address payable sender) private whenNotPaused {
+  function claimDividendByAddress(address payable sender) private whenNotPaused returns(uint256){
     requireUnfrozen(sender);
-    claimDividendCore(sender);
+    return claimDividendCore(sender);
   }
 
-  function claimDividendCore(address payable sender) private whenNotPaused {
+  function claimDividendCore(address payable sender) private whenNotPaused returns(uint256){
     uint256 owing = dividendBalanceOf(sender);
     require(_pool.totalDividendsClaimed.add(owing) <= _pool.totalDividends, "Unable to fund dividend claim.");
     _lastDividends[sender] = _pool.totalDividends; // Must always execute even if no funds are claimed
@@ -992,6 +1014,7 @@ contract EvolutionToken is ERC20Interface, BoardApprovable, Pausable, Freezable 
       _pool.totalDividendsClaimed = _pool.totalDividendsClaimed.add(owing);
       emit onClaimDividend(sender, owing);
     }
+    return owing;
   }
 
   /**
@@ -1021,11 +1044,6 @@ contract EvolutionToken is ERC20Interface, BoardApprovable, Pausable, Freezable 
   */
   function getIsPoolBalanced() private view returns(bool) {
     uint256 dividendsUnclaimed = _pool.totalDividends.sub(_pool.totalDividendsClaimed);
-    if(address(this).balance == _pool.total.add(dividendsUnclaimed)) {
-      return true;
-    }
-    else {
-      return false;
-    }
+    return (address(this).balance == _pool.total.add(dividendsUnclaimed));
   }
 }
