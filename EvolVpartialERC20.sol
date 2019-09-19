@@ -785,12 +785,12 @@ contract EvolutionToken is ERC20Interface, BoardApprovable, Pausable, Freezable 
     uint256 ethValueLeftAfterDividend = 0;
     uint256 holderDividend = 0;
     (ethValueLeftAfterDividend, holderDividend) = estimateSell(tokenAmount);
-    
+
     uint256 unclaimed = _pool.totalDividends.sub(_pool.totalDividendsClaimed);
     uint256 totalRequired = ethValueLeftAfterDividend.add(unclaimed);
-    
+
     require(address(this).balance >= totalRequired, "Unable to fund the sell transaction.");
-    
+
     claimDividendByAddress(msg.sender);
     increaseTotalDividends(holderDividend, false);
 
@@ -812,8 +812,6 @@ contract EvolutionToken is ERC20Interface, BoardApprovable, Pausable, Freezable 
 
     // Update total tokens sold
     _totalTokensSold = _totalTokensSold.add(tokenAmount);
-    
-    
 
     return true;
   }
@@ -943,14 +941,12 @@ contract EvolutionToken is ERC20Interface, BoardApprovable, Pausable, Freezable 
   function increaseTotalDividends(uint256 value, bool fromContractBalanceIncrease) private {
     _pool.totalDividends = _pool.totalDividends.add(value);
     emit onDividendIncrease(value);
-    
-    if(fromContractBalanceIncrease)
-    {
-        _pool.dividendBuyVolume = _pool.dividendBuyVolume.add(value);
+
+    if(fromContractBalanceIncrease) {
+      _pool.dividendBuyVolume = _pool.dividendBuyVolume.add(value);
     }
-    else
-    {
-        _pool.dividendSellVolume = _pool.dividendSellVolume.add(value);
+    else {
+      _pool.dividendSellVolume = _pool.dividendSellVolume.add(value);
     }
   }
 
@@ -981,9 +977,8 @@ contract EvolutionToken is ERC20Interface, BoardApprovable, Pausable, Freezable 
     address payable recip = address(uint160(recipient));
 
     // Withdraw all outstanding dividends first
-      claimDividendByAddress(sender);
-      claimDividendByAddress(recip);
-
+    claimDividendByAddress(sender);
+    claimDividendByAddress(recip);
 
     _balances[sender] = _balances[sender].sub(amount);
     _balances[recipient] = _balances[recipient].add(amount);
