@@ -796,21 +796,17 @@ contract EvolutionToken is ERC20Interface, BoardApprovable, Pausable, Freezable 
     uint256 holderDividend = 0;
     uint256 ethValue = tokenAmount.mul(_currentPrice);
     require(ethValue >= _minimumEthSellAmount, "Transaction minimum not met.");
-    
-    // Get current unpaid dividends
-    uint256 owing = dividendBalanceOf(msg.sender);
 
     (ethValueLeftAfterDividend, holderDividend) = estimateSell(tokenAmount);
     uint256 unclaimed = _pool.totalDividends.sub(_pool.totalDividendsClaimed);
     uint256 totalRequired = ethValueLeftAfterDividend.add(unclaimed);
     require(address(this).balance >= totalRequired, "Unable to fund the sell transaction.");
 
+    //uint256 claimedDividends = claimDividendByAddress(msg.sender);
+    claimDividendByAddress(msg.sender);
     increaseTotalDividends(holderDividend);
 
     burnOnSell(msg.sender, tokenAmount);
-
-    // Don't give the seller the dividend
-    _lastDividends[msg.sender] = _pool.totalDividends.sub(owing);
 
     // Update the current price based on actual token amount sold
     _currentPrice = _currentPrice.sub(_increment.mul(tokenAmount));
@@ -821,9 +817,7 @@ contract EvolutionToken is ERC20Interface, BoardApprovable, Pausable, Freezable 
 
     emit onPriceChange(_currentPrice);
 
-    if(msg.sender != _owner) {
-      msg.sender.transfer(ethValueLeftAfterDividend);
-    }
+    msg.sender.transfer(ethValueLeftAfterDividend);
 
     updatePoolState(ethValueLeftAfterDividend, false);
 
