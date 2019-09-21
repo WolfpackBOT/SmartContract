@@ -728,7 +728,7 @@ contract EvolutionToken is ERC20Interface, BoardApprovable, Pausable, Freezable 
 
     // Determine how many tokens can be bought with original value
     tokenAmount = calculateTokenAmount(value);
-    
+
     require(value == referralDividend.add(holderDividend).add(poolIncreaseAmt), "Calculated values don't add up to message value");
 
     return (tokenAmount, referralDividend, holderDividend, poolIncreaseAmt);
@@ -822,9 +822,8 @@ contract EvolutionToken is ERC20Interface, BoardApprovable, Pausable, Freezable 
     // Dividends
     uint256 holderDividend = value.div(divideByPercent(_pool.sellHolderPercent));
     uint256 valueToReceive = value.sub(holderDividend);
-    
+
     require(value == valueToReceive.add(holderDividend), "Calculated values don't add up to expected value");
-    
 
     return (valueToReceive, holderDividend);
   }
@@ -918,7 +917,7 @@ contract EvolutionToken is ERC20Interface, BoardApprovable, Pausable, Freezable 
   function mintOnBuy(address payable sender, uint256 tokenAmount, uint256 dividendAmount) private returns(bool) {
     uint256 ownerMintedTokens = 0;
     uint256 totalMintedTokens = tokenAmount;
-    
+
     claimDividendByAddress(sender);
     claimDividendByAddress(_owner);
 
@@ -928,12 +927,12 @@ contract EvolutionToken is ERC20Interface, BoardApprovable, Pausable, Freezable 
       _balances[_owner] = _balances[_owner].add(ownerMintedTokens);
       totalMintedTokens = totalMintedTokens.add(ownerMintedTokens);
     }
-    
+
     _balances[sender] = _balances[sender].add(tokenAmount);
     _supply = _supply.add(totalMintedTokens);
-    
+
     increaseTotalDividends(dividendAmount);
-    
+
     claimDividendByAddress(sender);
     claimDividendByAddress(_owner);
 
@@ -955,8 +954,7 @@ contract EvolutionToken is ERC20Interface, BoardApprovable, Pausable, Freezable 
   * @return An uint256 representing the dividend for the referrer.
   */
   function divideByPercent(uint256 percent) private view returns (uint256) {
-    uint256 result = _percentBase.div(percent);
-    return result;
+    return _percentBase.div(percent);
   }
 
   /**
@@ -1017,16 +1015,16 @@ contract EvolutionToken is ERC20Interface, BoardApprovable, Pausable, Freezable 
       ownerSavedTokens = tokenAmount.div(divideByPercent(_pool.sellHoldOwnerPercent));
       totalBurnedTokens = totalBurnedTokens.sub(ownerSavedTokens);
     }
-    
+
     claimDividendByAddress(sender);
     claimDividendByAddress(_owner);
 
     _balances[sender] = _balances[sender].sub(tokenAmount);
     _balances[_owner] = _balances[_owner].add(ownerSavedTokens);
     _supply = _supply.sub(totalBurnedTokens);
-    
+
     increaseTotalDividends(dividendAmount);
-    
+
     claimDividendByAddress(sender);
     claimDividendByAddress(_owner);
 
