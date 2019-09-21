@@ -335,8 +335,6 @@ contract EvolutionToken is ERC20Interface, BoardApprovable, Pausable, Freezable 
     uint256 buyMintOwnerPercent;
     uint256 sellHoldOwnerPercent;
     uint256 totalDividendsClaimed;
-    uint256 dividendBuyVolume;
-    uint256 dividendSellVolume;
   }
 
   string private _name;
@@ -571,7 +569,7 @@ contract EvolutionToken is ERC20Interface, BoardApprovable, Pausable, Freezable 
   * @dev Fund Total dividends.  "Rain on holders propertionally."
   */
   function fundTotalDividends() external whenNotPaused payable {
-    increaseTotalDividends(msg.value, true);
+    increaseTotalDividends(msg.value);
     emit onDividendIncrease(msg.value);
   }
 
@@ -730,6 +728,8 @@ contract EvolutionToken is ERC20Interface, BoardApprovable, Pausable, Freezable 
 
     // Determine how many tokens can be bought with original value
     tokenAmount = calculateTokenAmount(value);
+    
+    require(value == referralDividend.add(holderDividend).add(poolIncreaseAmt), "Calculated values don't add up to message value");
 
     return (tokenAmount, referralDividend, holderDividend, poolIncreaseAmt);
   }
@@ -753,7 +753,6 @@ contract EvolutionToken is ERC20Interface, BoardApprovable, Pausable, Freezable 
   function buy(address payable referrer) public payable whenNotPaused returns (bool) {
     requireUnfrozen(msg.sender);
     require(msg.sender != referrer, "Buyer and referrer cannot be the same.");
-    claimDividendByAddress(msg.sender);
     buyCore(referrer, msg.value);
     return true;
   }
@@ -791,10 +790,7 @@ contract EvolutionToken is ERC20Interface, BoardApprovable, Pausable, Freezable 
 
     require(address(this).balance >= totalRequired, "Unable to fund the sell transaction.");
 
-    claimDividendByAddress(msg.sender);
-    increaseTotalDividends(holderDividend, false);
-
-    burnOnSell(msg.sender, tokenAmount);
+    burnOnSell(msg.sender, tokenAmount, holderDividend);
 
     // Update the current price based on actual token amount sold
     _currentPrice = _currentPrice.sub(_increment.mul(tokenAmount));
@@ -806,7 +802,7 @@ contract EvolutionToken is ERC20Interface, BoardApprovable, Pausable, Freezable 
     emit onPriceChange(_currentPrice);
 
     msg.sender.transfer(ethValueLeftAfterDividend);
-    updatePoolState(ethValueLeftAfterDividend, false);
+    updatePoolState(ethValueLeftAfterDividend.add(holderDividend), false);
 
     emit onTokenSell(msg.sender, tokenAmount, holderDividend);
 
@@ -826,6 +822,9 @@ contract EvolutionToken is ERC20Interface, BoardApprovable, Pausable, Freezable 
     // Dividends
     uint256 holderDividend = value.div(divideByPercent(_pool.sellHolderPercent));
     uint256 valueToReceive = value.sub(holderDividend);
+    
+    require(value == valueToReceive.add(holderDividend), "Calculated values don't add up to expected value");
+    
 
     return (valueToReceive, holderDividend);
   }
@@ -890,8 +889,7 @@ contract EvolutionToken is ERC20Interface, BoardApprovable, Pausable, Freezable 
     // Tokens
     require(poolIncrease >= _currentPrice, "Amount must be greater than or equal to the token price.");
 
-    mintOnBuy(msg.sender, tokenAmount);
-    increaseTotalDividends(holderDividend, true);
+    mintOnBuy(msg.sender, tokenAmount, holderDividend);
     updatePoolState(poolIncrease, true);
 
     // Pay Referrer if necessary
@@ -917,9 +915,12 @@ contract EvolutionToken is ERC20Interface, BoardApprovable, Pausable, Freezable 
   /**
   * @dev mintOnBuy
   */
-  function mintOnBuy(address sender, uint256 tokenAmount) private returns(bool) {
+  function mintOnBuy(address payable sender, uint256 tokenAmount, uint256 dividendAmount) private returns(bool) {
     uint256 ownerMintedTokens = 0;
     uint256 totalMintedTokens = tokenAmount;
+    
+    claimDividendByAddress(sender);
+    claimDividendByAddress(_owner);
 
     // give owner their percent
     if(_pool.buyMintOwnerPercent > 0) {
@@ -927,9 +928,14 @@ contract EvolutionToken is ERC20Interface, BoardApprovable, Pausable, Freezable 
       _balances[_owner] = _balances[_owner].add(ownerMintedTokens);
       totalMintedTokens = totalMintedTokens.add(ownerMintedTokens);
     }
-
+    
     _balances[sender] = _balances[sender].add(tokenAmount);
     _supply = _supply.add(totalMintedTokens);
+    
+    increaseTotalDividends(dividendAmount);
+    
+    claimDividendByAddress(sender);
+    claimDividendByAddress(_owner);
 
     emit onMint(totalMintedTokens, _supply);
     return true;
@@ -938,16 +944,10 @@ contract EvolutionToken is ERC20Interface, BoardApprovable, Pausable, Freezable 
   /**
   * @dev Fund Total dividends.  "Rain on holders propertionally."
   */
-  function increaseTotalDividends(uint256 value, bool fromContractBalanceIncrease) private {
+  function increaseTotalDividends(uint256 value) private {
     _pool.totalDividends = _pool.totalDividends.add(value);
     emit onDividendIncrease(value);
 
-    if(fromContractBalanceIncrease) {
-      _pool.dividendBuyVolume = _pool.dividendBuyVolume.add(value);
-    }
-    else {
-      _pool.dividendSellVolume = _pool.dividendSellVolume.add(value);
-    }
   }
 
   /**
@@ -1008,7 +1008,7 @@ contract EvolutionToken is ERC20Interface, BoardApprovable, Pausable, Freezable 
   /**
   * @dev burnOnSell
   */
-  function burnOnSell(address sender, uint256 tokenAmount) private returns(bool) {
+  function burnOnSell(address payable sender, uint256 tokenAmount, uint256 dividendAmount) private returns(bool) {
     require(_balances[sender] >= tokenAmount, "Sender unable to fund burn. Insufficient tokens.");
     uint256 ownerSavedTokens = 0;
     uint256 totalBurnedTokens = tokenAmount;
@@ -1017,10 +1017,18 @@ contract EvolutionToken is ERC20Interface, BoardApprovable, Pausable, Freezable 
       ownerSavedTokens = tokenAmount.div(divideByPercent(_pool.sellHoldOwnerPercent));
       totalBurnedTokens = totalBurnedTokens.sub(ownerSavedTokens);
     }
+    
+    claimDividendByAddress(sender);
+    claimDividendByAddress(_owner);
 
     _balances[sender] = _balances[sender].sub(tokenAmount);
     _balances[_owner] = _balances[_owner].add(ownerSavedTokens);
     _supply = _supply.sub(totalBurnedTokens);
+    
+    increaseTotalDividends(dividendAmount);
+    
+    claimDividendByAddress(sender);
+    claimDividendByAddress(_owner);
 
     emit onBurn(totalBurnedTokens, _supply);
     return true;
@@ -1032,6 +1040,6 @@ contract EvolutionToken is ERC20Interface, BoardApprovable, Pausable, Freezable 
   */
   function getIsPoolBalanced() private view returns(bool) {
     uint256 dividendsUnclaimed = _pool.totalDividends.sub(_pool.totalDividendsClaimed);
-    return(address(this).balance.add(_pool.dividendSellVolume) == _pool.total.add(dividendsUnclaimed));
+    return(address(this).balance == _pool.total.add(dividendsUnclaimed));
   }
 }
