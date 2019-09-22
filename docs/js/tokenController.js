@@ -614,23 +614,11 @@
                             $scope.defaultAccount = accounts[0];
                             $scope.loadingMetamask = false;
 
-                            if (authService.isAuthenticated()) {
-                                tokenService.getUserTokenInfo().then(function (resp) {
-                                    $scope.referrerAddress = resp.data.referrerAddress;
-
-                                    $http.get("/abi.json")
-                                        .then(function (res) {
-                                            $scope.contract = web3.eth.contract(res.data).at($scope.contractAddress);
-                                            $scope.refreshStats();
-                                        });
+                            $http.get("/abi.json")
+                                .then(function (res) {
+                                    $scope.contract = web3.eth.contract(res.data).at($scope.contractAddress);
+                                    $scope.refreshStats();
                                 });
-                            } else {
-                                $http.get("/abi.json")
-                                    .then(function (res) {
-                                        $scope.contract = web3.eth.contract(res.data).at($scope.contractAddress);
-                                        $scope.refreshStats();
-                                    });
-                            }
                         }).catch(function (reason) {
                             console.info(reason);
                             $scope.loadingMetamask = false;
