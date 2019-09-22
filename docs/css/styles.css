@@ -286,8 +286,22 @@ select.ng-valid, input.ng-valid {
     margin-bottom: 0;
 }
 
-.table2 td {
-    /*padding: 1px;*/
+.table-centered tr th, .table-centered tr td {
+    text-align: center;
+}
+
+.table-sm {
+    width: 10em;
+}
+
+    .table-sm tr th, .table-sm tr td {
+        font-size: .8em;
+        padding: 2px;
+    }
+
+.table-dim tr th, .table-dim tr td {
+    border: 1px solid #424242;
+    color: #e0e0e0;
 }
 
 .table2 tr > td:first-child {
