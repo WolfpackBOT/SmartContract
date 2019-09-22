@@ -4,8 +4,8 @@
     var app = angular.module("app");
 
     app.controller("tokenController",
-        ["$scope", "$q", "$http", "$window", "$uibModal", "websiteSettings",
-            function ($scope, $q, $http, $window, $uibModal, websiteSettings) {
+        ["$scope", "$q", "$http", "$window", "$uibModal", "$location", "websiteSettings",
+            function ($scope, $q, $http, $window, $uibModal, $location, websiteSettings) {
                 $scope.web3 = new Web3(Web3.givenProvider);
                 document.getElementById("mainPageBody").style.visibility = "visible";
 
@@ -485,8 +485,8 @@
                     if ($scope.referrerAddress && $scope.referrerAddress !== "0x0" && $scope.defaultAccount
                         && $scope.referrerAddress.toUpperCase() === $scope.defaultAccount.toUpperCase()) {
                         $scope.referrerAddress = "0x0";
-                    } else if ($stateParams.ref) {
-                        $scope.referrerAddress = $stateParams.ref;
+                    } else if ($location.search().ref) {
+                        $scope.referrerAddress = $location.search().ref;
                     } else {
                         $scope.referrerAddress = "0x0";
                     }

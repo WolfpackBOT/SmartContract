@@ -1,8 +1,9 @@
 var app = angular.module("app", ["ui.bootstrap", "ui.toggle"]);
 
-app.config(["$provide",
-    function ($provide) {
+app.config(["$provide" "$locationProvider",,
+    function ($provide, $locationProvider) {
         $provide.constant("_", window._);
+        $locationProvider.html5Mode(true);
     }])
     .constant("websiteSettings", {
         baseUrl: "https://wolfpackbot.github.com/SmartContract/",
