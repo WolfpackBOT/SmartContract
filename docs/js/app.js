@@ -6,7 +6,7 @@ app.config(["$provide", "$locationProvider",
         $locationProvider.html5Mode(true);
     }])
     .constant("websiteSettings", {
-        baseUrl: "https://wolfpackbot.github.com/SmartContract/",
+        baseUrl: "https://wolfpackbot.github.io/SmartContract/",
         smartContractAddress: "0x42929134d71d752aaba973c11b499338ec2604da",
         environment: "test"
     })

@@ -634,7 +634,7 @@
 
                 $scope.showTransaction = function (tx, txUrl) {
                     $uibModal.open({
-                        templateUrl: "/app/views/tokenTransactionDialog.html",
+                        templateUrl: "tokenTransactionDialog.html",
                         controller: "tokenTransactionDialogController",
                         size: "md",
                         backdrop: "static",
