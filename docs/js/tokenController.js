@@ -614,7 +614,7 @@
                             $scope.defaultAccount = accounts[0];
                             $scope.loadingMetamask = false;
 
-                            $http.get("/abi.json")
+                            $http.get("abi.json")
                                 .then(function (res) {
                                     $scope.contract = web3.eth.contract(res.data).at($scope.contractAddress);
                                     $scope.refreshStats();
