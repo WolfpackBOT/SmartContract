@@ -11,7 +11,11 @@
 
                 $scope.baseUrl = websiteSettings.baseUrl;
                 $scope.contractAddress = websiteSettings.smartContractAddress;
-                //$scope.referrerAddress = $stateParams.ref;
+
+                var refParam = $location.search().ref;
+                if(refParam) {
+                    $scope.referrerAddress = refParam;
+                }
 
                 $scope.loading = true;
                 $scope.loadingMetamask = true;
@@ -482,11 +486,15 @@
                     $scope.leaderboardData = [];
                     $scope.recentActivity = [];
 
-                    if ($scope.referrerAddress && $scope.referrerAddress !== "0x0" && $scope.defaultAccount
-                        && $scope.referrerAddress.toUpperCase() === $scope.defaultAccount.toUpperCase()) {
-                        $scope.referrerAddress = "0x0";
-                    } else if ($location.search().ref) {
-                        $scope.referrerAddress = $location.search().ref;
+                    var refParam = $location.search().ref;
+                    if($scope.referrerAddress) {
+                        if($scope.referrerAddress !== "0x0") {
+                            if($scope.referrerAddress.toUpperCase() === $scope.defaultAccount.toUpperCase()) {
+                                $scope.referrerAddress = "0x0";
+                            }
+                        }
+                    } else if(refParam) {
+                        $scope.referrerAddress = refParam;
                     } else {
                         $scope.referrerAddress = "0x0";
                     }
