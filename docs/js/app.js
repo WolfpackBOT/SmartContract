@@ -7,7 +7,7 @@ app.config(["$provide", "$locationProvider",
     }])
     .constant("websiteSettings", {
         baseUrl: "https://wolfpackbot.github.io/SmartContract/",
-        smartContractAddress: "0x42929134d71d752aaba973c11b499338ec2604da",
+        smartContractAddress: "0x025c55b4a051a7a30671dff8b6686a9003f8c414",
         environment: "test"
     })
     // allow you to format a text input field.
