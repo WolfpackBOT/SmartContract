@@ -632,6 +632,7 @@
                                     });
                             }
                         }).catch(function (reason) {
+                            console.info(reason);
                             $scope.loadingMetamask = false;
                             console.log(reason === "User rejected provider access");
                         });
