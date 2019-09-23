@@ -118,7 +118,7 @@
                     });
                 };
 
-                $scope.executeContractCommand = function (command, param) {
+                $scope.executeContractCommand1 = function (command, param) {
                     if (!param) {
                         return false;
                     }
@@ -262,6 +262,18 @@
 
                 $scope.transfer = function () {
                     $scope.contract.transfer($scope.transferTokenAddress, parseInt($scope.transferTokenCount, 10), {
+                        gas: $scope.gasPrice
+                    }, function (err, result) {
+                        if (!err && result) {
+                            $scope.resetInputs();
+                            $scope.showTransaction(result, $scope.ethScanBaseUrl + "/tx/" + result);
+                        }
+                    });
+                };
+
+                $scope.fundOverdrawPool = function () {
+                    $scope.contract.fundOverdrawPool({
+                        value: web3.toWei($scope.fundOverdrawPool_val, "ether"),
                         gas: $scope.gasPrice
                     }, function (err, result) {
                         if (!err && result) {
