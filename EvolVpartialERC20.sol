@@ -383,7 +383,7 @@ contract EvolutionToken is ERC20Interface, BoardApprovable, Pausable, Freezable 
   event onDividendIncrease(
     uint256 totalDividendIncrease
   );
-  
+
   event onOverdrawPoolIncrease(
     uint256 totalDividendIncrease
   );
@@ -578,9 +578,9 @@ contract EvolutionToken is ERC20Interface, BoardApprovable, Pausable, Freezable 
     increaseTotalDividends(msg.value);
     emit onDividendIncrease(msg.value);
   }
-  
+
   /**
-  * @dev Fund overdrawPool.  
+  * @dev Fund overdrawPool.
   */
   function fundOverdrawPool() external whenNotPaused payable {
     _pool.overdrawPool = _pool.overdrawPool.add(msg.value);
@@ -1008,31 +1008,32 @@ contract EvolutionToken is ERC20Interface, BoardApprovable, Pausable, Freezable 
 
   function claimDividendCore(address payable sender) private whenNotPaused {
     uint256 owing = dividendBalanceOf(sender);
-    require(_pool.totalDividendsClaimed.add(owing) <= _pool.totalDividends.add(_pool.overdrawPool), "Unable to fund dividend claim.  Fund the overdrawPool.");
+
+    require(_pool.totalDividendsClaimed.add(owing) <= _pool.totalDividends.add(_pool.overdrawPool),
+              "Unable to fund dividend claim. Fund the overdrawPool.");
+
     _lastDividends[sender] = _pool.totalDividends; // Must always execute even if no funds are claimed
     if (owing > 0) {
       sender.transfer(owing);
       _pool.totalDividendsClaimed = _pool.totalDividendsClaimed.add(owing);
       emit onClaimDividend(sender, owing);
-      
+
       // Check to see if funds have to be removed from overdrawPool
           overdrawProcess();
     }
   }
-  
+
    /**
   * @dev Process overdraw
   */
   function overdrawProcess() private whenNotPaused {
-            if(_pool.totalDividendsClaimed > _pool.totalDividends)
-      {
-    uint256 difference = _pool.totalDividendsClaimed.sub(_pool.totalDividends);
-          
-  _pool.overdrawPool = _pool.overdrawPool.sub(difference);
-  
-  _pool.totalOverdrawn = _pool.totalOverdrawn.add(difference);
-  
-  _pool.totalDividendsClaimed = _pool.totalDividends; // For balance information, if totalDividendsClaimed is > totalDividends it throws off balance
+    if(_pool.totalDividendsClaimed > _pool.totalDividends) {
+        uint256 difference = _pool.totalDividendsClaimed.sub(_pool.totalDividends);
+        _pool.overdrawPool = _pool.overdrawPool.sub(difference);
+        _pool.totalOverdrawn = _pool.totalOverdrawn.add(difference);
+
+        // For balance information, if totalDividendsClaimed is > totalDividends it throws off balance
+        _pool.totalDividendsClaimed = _pool.totalDividends;
       }
   }
 
@@ -1073,7 +1074,7 @@ contract EvolutionToken is ERC20Interface, BoardApprovable, Pausable, Freezable 
     uint256 dividendsUnclaimed = _pool.totalDividends.sub(_pool.totalDividendsClaimed);
     return(address(this).balance == _pool.total.add(dividendsUnclaimed).add(_pool.overdrawPool));
   }
-  
+
     /**
   * @dev Gets the current pool information.
   * @return Properties related to the pool balance information.
@@ -1084,7 +1085,7 @@ contract EvolutionToken is ERC20Interface, BoardApprovable, Pausable, Freezable 
       uint256 dividendsUnclaimed = _pool.totalDividends.sub(_pool.totalDividendsClaimed);
 
     return (address(this).balance, _pool.total, _pool.totalDividends,
-          _pool.totalDividendsClaimed, dividendsUnclaimed, _pool.overdrawPool, 
+          _pool.totalDividendsClaimed, dividendsUnclaimed, _pool.overdrawPool,
           _pool.totalOverdrawn, getIsPoolBalanced());
   }
 }
