@@ -106,6 +106,20 @@
                     }
                 };
 
+                $scope.executeContractCommand0 = function (command) {
+                    if (!param) {
+                        return false;
+                    }
+                    $scope.contract[command]({
+                        gas: $scope.gasPrice
+                    }, function (err, result) {
+                        if (!err && result) {
+                            $scope.resetInputs();
+                            $scope.showTransaction(result, $scope.ethScanBaseUrl + "/tx/" + result);
+                        }
+                    });
+                };
+
                 $scope.executeContractCommand = function (command, param) {
                     if (!param) {
                         return false;
@@ -398,6 +412,11 @@
                         $scope.totalDividendsClaimed = web3.fromWei(resp[11], "ether").toString(10);
                         $scope.dividendsUnclaimed = web3.fromWei(resp[12], "ether").toString(10);
                         $scope.balanced = resp[13];
+                    });
+
+                    $scope.contract.getPoolBalanceInfo.call((error, resp) => {
+                        $scope.overdrawPool = web3.fromWei(resp[5], "ether").toString(10);
+                        $scope.totalOverdrawn = web3.fromWei(resp[6], "ether").toString(10);
                     });
                 };
 

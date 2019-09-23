@@ -112,6 +112,14 @@
                                                                 <td>dividendsUnclaimed</td>
                                                                 <td>{{dividendsUnclaimed}}</td>
                                                             </tr>
+                                                            <tr>
+                                                                <td>overdrawPool</td>
+                                                                <td>{{overdrawPool}}</td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td>totalOverdrawn</td>
+                                                                <td>{{totalOverdrawn}}</td>
+                                                            </tr>
                                                         </tbody>
                                                     </table>
                                                 </div>
@@ -122,7 +130,7 @@
                                                     <div class="col-md-4">
                                                         <b>setMinBoardMemberApprovalsForAction</b><br />
                                                         <input type="text" ng-model="setMinBoardMemberApprovalsForAction_val" ng-disabled="!contractBoardStatusApproved" class="form-control-sm" />
-                                                        <button type="button" class="btn btn-default btn-sm" ng-click="executeContractCommand('setMinBoardMemberApprovalsForAction', setMinBoardMemberApprovalsForAction_val)" ng-disabled="!contractBoardStatusApproved || !setMinBoardMemberApprovalsForAction_val">Execute</button>
+                                                        <button type="button" class="btn btn-default btn-sm" ng-click="executeContractCommand1('setMinBoardMemberApprovalsForAction', setMinBoardMemberApprovalsForAction_val)" ng-disabled="!contractBoardStatusApproved || !setMinBoardMemberApprovalsForAction_val">Execute</button>
                                                     </div>
                                                     <div class="col-md-4">
                                                         <b>addBoardMember</b><br />
@@ -144,12 +152,12 @@
                                                     <div class="col-md-4">
                                                         <b>freezeAddress</b><br />
                                                         <input type="text" ng-model="freezeAddress_val" ng-disabled="!contractBoardStatusApproved" placeholder="address" class="form-control-sm" />
-                                                        <button type="button" class="btn btn-default btn-sm" ng-click="executeContractCommand('freezeAddress', freezeAddress_val)" ng-disabled="!contractBoardStatusApproved || !freezeAddress_val">Execute</button>
+                                                        <button type="button" class="btn btn-default btn-sm" ng-click="executeContractCommand1('freezeAddress', freezeAddress_val)" ng-disabled="!contractBoardStatusApproved || !freezeAddress_val">Execute</button>
                                                     </div>
                                                     <div class="col-md-4">
                                                         <b>unfreezeAddress</b><br />
                                                         <input type="text" ng-model="unfreezeAddress_val" ng-disabled="!contractBoardStatusApproved" placeholder="address" class="form-control-sm" />
-                                                        <button type="button" class="btn btn-default btn-sm" ng-click="executeContractCommand('unfreezeAddress', unfreezeAddress_val)" ng-disabled="!contractBoardStatusApproved || !unfreezeAddress_val">Execute</button>
+                                                        <button type="button" class="btn btn-default btn-sm" ng-click="executeContractCommand1('unfreezeAddress', unfreezeAddress_val)" ng-disabled="!contractBoardStatusApproved || !unfreezeAddress_val">Execute</button>
                                                     </div>
                                                 </div>
                                             </fieldset>
@@ -159,12 +167,12 @@
                                                     <div class="col-md-4">
                                                         <b>mint</b><br />
                                                         <input type="text" style="text-align: center;" ng-model="mint_val" ng-disabled="!contractBoardStatusApproved" class="form-control-sm" />
-                                                        <button type="button" class="btn btn-default btn-sm" ng-click="executeContractCommand('mint', mint_val)" ng-disabled="!contractBoardStatusApproved || !mint_val">Execute</button>
+                                                        <button type="button" class="btn btn-default btn-sm" ng-click="executeContractCommand1('mint', mint_val)" ng-disabled="!contractBoardStatusApproved || !mint_val">Execute</button>
                                                     </div>
                                                     <div class="col-md-4">
                                                         <b>burn</b><br />
                                                         <input type="text" style="text-align: center;" ng-model="burn_val" ng-disabled="!contractBoardStatusApproved" class="form-control-sm" />
-                                                        <button type="button" class="btn btn-default btn-sm" ng-click="executeContractCommand('burn', burn_val)" ng-disabled="!contractBoardStatusApproved || !burn_val">Execute</button>
+                                                        <button type="button" class="btn btn-default btn-sm" ng-click="executeContractCommand1('burn', burn_val)" ng-disabled="!contractBoardStatusApproved || !burn_val">Execute</button>
                                                     </div>
                                                     <div class="col-md-4">
                                                         <b>Pause</b><br />
@@ -175,29 +183,29 @@
                                                     <div class="col-md-4">
                                                         <b>setName</b><br />
                                                         <input type="text" ng-model="setName_val" ng-disabled="!contractBoardStatusApproved" class="form-control-sm" />
-                                                        <button type="button" class="btn btn-default btn-sm" ng-click="executeContractCommand('setName', setName_val)" ng-disabled="!contractBoardStatusApproved || !setName_val">Execute</button>
+                                                        <button type="button" class="btn btn-default btn-sm" ng-click="executeContractCommand1('setName', setName_val)" ng-disabled="!contractBoardStatusApproved || !setName_val">Execute</button>
                                                     </div>
                                                     <div class="col-md-4">
                                                         <b>setSymbol</b><br />
                                                         <input type="text" ng-model="setSymbol_val" ng-disabled="!contractBoardStatusApproved" class="form-control-sm" />
-                                                        <button type="button" class="btn btn-default btn-sm" ng-click="executeContractCommand('setSymbol', setSymbol_val)" ng-disabled="!contractBoardStatusApproved || !setSymbol_val">Execute</button>
+                                                        <button type="button" class="btn btn-default btn-sm" ng-click="executeContractCommand1('setSymbol', setSymbol_val)" ng-disabled="!contractBoardStatusApproved || !setSymbol_val">Execute</button>
                                                     </div>
                                                     <div class="col-md-4">
                                                         <b>setIncrement</b><br />
                                                         <input type="text" ng-model="setIncrement_val" ng-disabled="!contractBoardStatusApproved" class="form-control-sm" />
-                                                        <button type="button" class="btn btn-default btn-sm" ng-click="executeContractCommand('setIncrement', setIncrement_val)" ng-disabled="!contractBoardStatusApproved || !setIncrement_val">Execute</button>
+                                                        <button type="button" class="btn btn-default btn-sm" ng-click="executeContractCommand1('setIncrement', setIncrement_val)" ng-disabled="!contractBoardStatusApproved || !setIncrement_val">Execute</button>
                                                     </div>
                                                 </div>
                                                 <div class="row">
                                                     <div class="col-md-4">
                                                         <b>setLowerCap</b><br />
                                                         <input type="text" ng-model="setLowerCap_val" ng-disabled="!contractBoardStatusApproved" class="form-control-sm" />
-                                                        <button type="button" class="btn btn-default btn-sm" ng-click="executeContractCommand('setLowerCap', setLowerCap_val)" ng-disabled="!contractBoardStatusApproved || !setLowerCap_val">Execute</button>
+                                                        <button type="button" class="btn btn-default btn-sm" ng-click="executeContractCommand1('setLowerCap', setLowerCap_val)" ng-disabled="!contractBoardStatusApproved || !setLowerCap_val">Execute</button>
                                                     </div>
                                                     <div class="col-md-4">
                                                         <b>setMinimumEthSellAmount</b><br />
                                                         <input type="text" ng-model="setMinimumEthSellAmount_val" ng-disabled="!contractBoardStatusApproved" class="form-control-sm" />
-                                                        <button type="button" class="btn btn-default btn-sm" ng-click="executeContractCommand('setMinimumEthSellAmount', setMinimumEthSellAmount_val)" ng-disabled="!contractBoardStatusApproved || !setMinimumEthSellAmount_val">Execute</button>
+                                                        <button type="button" class="btn btn-default btn-sm" ng-click="executeContractCommand1('setMinimumEthSellAmount', setMinimumEthSellAmount_val)" ng-disabled="!contractBoardStatusApproved || !setMinimumEthSellAmount_val">Execute</button>
                                                     </div>
                                                 </div>
                                             </fieldset>
@@ -207,41 +215,45 @@
                                                     <div class="col-md-4">
                                                         <b>setPoolFloor</b><br />
                                                         <input type="text" ng-model="setPoolFloor_val" ng-disabled="!contractBoardStatusApproved" class="form-control-sm" />
-                                                        <button type="button" class="btn btn-default btn-sm" ng-click="executeContractCommand('setPoolFloor', setPoolFloor_val)" ng-disabled="!contractBoardStatusApproved || !setPoolFloor_val">Execute</button>
+                                                        <button type="button" class="btn btn-default btn-sm" ng-click="executeContractCommand1('setPoolFloor', setPoolFloor_val)" ng-disabled="!contractBoardStatusApproved || !setPoolFloor_val">Execute</button>
                                                     </div>
                                                     <div class="col-md-4">
                                                         <b>setPoolCeiling</b><br />
                                                         <input type="text" ng-model="setPoolCeiling_val" ng-disabled="!contractBoardStatusApproved" class="form-control-sm" />
-                                                        <button type="button" class="btn btn-default btn-sm" ng-click="executeContractCommand('setPoolCeiling', setPoolCeiling_val)" ng-disabled="!contractBoardStatusApproved || !setPoolCeiling_val">Execute</button>
+                                                        <button type="button" class="btn btn-default btn-sm" ng-click="executeContractCommand1('setPoolCeiling', setPoolCeiling_val)" ng-disabled="!contractBoardStatusApproved || !setPoolCeiling_val">Execute</button>
                                                     </div>
                                                     <div class="col-md-4">
                                                         <b>setPoolBuyReferrerPercent</b><br />
                                                         <input type="text" ng-model="setPoolBuyReferrerPercent_val" ng-disabled="!contractBoardStatusApproved" class="form-control-sm" />
-                                                        <button type="button" class="btn btn-default btn-sm" ng-click="executeContractCommand('setPoolBuyReferrerPercent', setPoolBuyReferrerPercent_val)" ng-disabled="!contractBoardStatusApproved || !setPoolBuyReferrerPercent_val">Execute</button>
+                                                        <button type="button" class="btn btn-default btn-sm" ng-click="executeContractCommand1('setPoolBuyReferrerPercent', setPoolBuyReferrerPercent_val)" ng-disabled="!contractBoardStatusApproved || !setPoolBuyReferrerPercent_val">Execute</button>
                                                     </div>
                                                 </div>
                                                 <div class="row">
                                                     <div class="col-md-4">
                                                         <b>setPoolBuyHolderPercent</b><br />
                                                         <input type="text" ng-model="setPoolBuyHolderPercent_val" ng-disabled="!contractBoardStatusApproved" class="form-control-sm" />
-                                                        <button type="button" class="btn btn-default btn-sm" ng-click="executeContractCommand('setPoolBuyHolderPercent', setPoolBuyHolderPercent_val)" ng-disabled="!contractBoardStatusApproved || !setPoolBuyHolderPercent_val">Execute</button>
+                                                        <button type="button" class="btn btn-default btn-sm" ng-click="executeContractCommand1('setPoolBuyHolderPercent', setPoolBuyHolderPercent_val)" ng-disabled="!contractBoardStatusApproved || !setPoolBuyHolderPercent_val">Execute</button>
                                                     </div>
                                                     <div class="col-md-4">
                                                         <b>setPoolSellHolderPercent</b><br />
                                                         <input type="text" ng-model="setPoolSellHolderPercent_val" ng-disabled="!contractBoardStatusApproved" class="form-control-sm" />
-                                                        <button type="button" class="btn btn-default btn-sm" ng-click="executeContractCommand('setPoolSellHolderPercent', setPoolSellHolderPercent_val)" ng-disabled="!contractBoardStatusApproved || !setPoolSellHolderPercent_val">Execute</button>
+                                                        <button type="button" class="btn btn-default btn-sm" ng-click="executeContractCommand1('setPoolSellHolderPercent', setPoolSellHolderPercent_val)" ng-disabled="!contractBoardStatusApproved || !setPoolSellHolderPercent_val">Execute</button>
                                                     </div>
                                                     <div class="col-md-4">
                                                         <b>setPoolBuyMintOwnerPercent</b><br />
                                                         <input type="text" ng-model="setPoolBuyMintOwnerPercent_val" ng-disabled="!contractBoardStatusApproved" class="form-control-sm" />
-                                                        <button type="button" class="btn btn-default btn-sm" ng-click="executeContractCommand('setPoolBuyMintOwnerPercent', setPoolBuyMintOwnerPercent_val)" ng-disabled="!contractBoardStatusApproved || !setPoolBuyMintOwnerPercent_val">Execute</button>
+                                                        <button type="button" class="btn btn-default btn-sm" ng-click="executeContractCommand1('setPoolBuyMintOwnerPercent', setPoolBuyMintOwnerPercent_val)" ng-disabled="!contractBoardStatusApproved || !setPoolBuyMintOwnerPercent_val">Execute</button>
                                                     </div>
                                                 </div>
                                                 <div class="row">
                                                     <div class="col-md-4">
                                                         <b>setPoolSellHoldOwnerPercent</b><br />
                                                         <input type="text" ng-model="setPoolSellHoldOwnerPercent_val" ng-disabled="!contractBoardStatusApproved" class="form-control-sm" />
-                                                        <button type="button" class="btn btn-default btn-sm" ng-click="executeContractCommand('setPoolSellHoldOwnerPercent', setPoolSellHoldOwnerPercent_val)" ng-disabled="!contractBoardStatusApproved || !setPoolSellHoldOwnerPercent_val">Execute</button>
+                                                        <button type="button" class="btn btn-default btn-sm" ng-click="executeContractCommand1('setPoolSellHoldOwnerPercent', setPoolSellHoldOwnerPercent_val)" ng-disabled="!contractBoardStatusApproved || !setPoolSellHoldOwnerPercent_val">Execute</button>
+                                                    </div>
+                                                    <div class="col-md-4">
+                                                        <b>fundOverdrawPool</b><br />
+                                                        <button type="button" class="btn btn-default btn-sm" ng-click="executeContractCommand0('fundOverdrawPool')">Execute</button>
                                                     </div>
                                                 </div>
                                             </fieldset>

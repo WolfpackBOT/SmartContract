@@ -1019,7 +1019,7 @@ contract EvolutionToken is ERC20Interface, BoardApprovable, Pausable, Freezable 
       emit onClaimDividend(sender, owing);
 
       // Check to see if funds have to be removed from overdrawPool
-          overdrawProcess();
+      overdrawProcess();
     }
   }
 
