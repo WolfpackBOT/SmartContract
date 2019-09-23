@@ -88,7 +88,7 @@
                 $scope.setPoolSellHolderPercent_val = null;
                 $scope.setPoolBuyMintOwnerPercent_val = null;
                 $scope.setPoolSellHoldOwnerPercent_val = null;
-                $scope.fundOverdrawPool = null;
+                $scope.fundOverdrawPool_val = null;
                 $scope.totalDividends = 0;
                 $scope.totalDividendsClaimed = 0;
                 $scope.dividendsUnclaimed = 0;
@@ -212,7 +212,7 @@
                     $scope.setPoolSellHolderPercent_val = null;
                     $scope.setPoolBuyMintOwnerPercent_val = null;
                     $scope.setPoolSellHoldOwnerPercent_val = null;
-                    $scope.fundOverdrawPool = null;
+                    $scope.fundOverdrawPool_val = null;
                 };
 
                 $scope.buyTokens = function () {
