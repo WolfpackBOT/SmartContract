@@ -107,9 +107,6 @@
                 };
 
                 $scope.executeContractCommand0 = function (command) {
-                    if (!param) {
-                        return false;
-                    }
                     $scope.contract[command]({
                         gas: $scope.gasPrice
                     }, function (err, result) {
