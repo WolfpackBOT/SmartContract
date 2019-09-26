@@ -720,7 +720,7 @@ contract EvolutionToken is ERC20Interface, BoardApprovable, Pausable, Freezable 
   /**
   * @dev Calculate buy numbers
   */
-  function estimateBuy(uint256 value, bool hasReferrer) public view
+  function estimateBuy(uint256 value) public view
   returns(uint256 tokens, uint256 referrerDividend, uint256 holdingDividend, uint256 poolIncrease) {
     uint256 tokenAmount;
     uint256 referralDividend;
@@ -728,13 +728,8 @@ contract EvolutionToken is ERC20Interface, BoardApprovable, Pausable, Freezable 
     uint256 poolIncreaseAmt;
 
     // Dividends
-    if(hasReferrer) {
       referralDividend = value.div(divideByPercent(_pool.buyReferrerPercent));
       holderDividend = value.div(divideByPercent(_pool.buyHolderPercent));
-    }
-    else {
-      holderDividend = value.div(divideByPercent(_pool.buyHolderPercent.add(_pool.buyReferrerPercent)));
-    }
 
     // Tokens
     uint256 allDividends = holderDividend.add(referralDividend);
@@ -897,7 +892,7 @@ contract EvolutionToken is ERC20Interface, BoardApprovable, Pausable, Freezable 
       hasReferrer = true;
     }
 
-    (tokenAmount, referralDividend, holderDividend, poolIncrease) = estimateBuy(msgValue, hasReferrer);
+    (tokenAmount, referralDividend, holderDividend, poolIncrease) = estimateBuy(msgValue);
 
     // Tokens
     require(poolIncrease >= _currentPrice, "Amount must be greater than or equal to the token price.");
