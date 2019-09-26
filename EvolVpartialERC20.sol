@@ -424,8 +424,8 @@ contract EvolutionToken is ERC20Interface, BoardApprovable, Pausable, Freezable 
     _balances[_owner] = _supply;
 
     // Set the pool initial values
-    _pool.floor = 1 ether;
-    _pool.ceiling = 10 ether;
+    _pool.floor = 0 ether;
+    _pool.ceiling = 0 ether;
     _pool.buyReferrerPercent = 5;
     _pool.buyHolderPercent = 10;
     _pool.sellHolderPercent = 10;
@@ -630,7 +630,7 @@ contract EvolutionToken is ERC20Interface, BoardApprovable, Pausable, Freezable 
   * @return A bool to show it completed successfully
   */
   function setPoolFloor(uint256 floor) external isBoardMember isBoardApproved returns(bool) {
-    require(floor < _pool.ceiling, "Ceiling must be greater than the floor.");
+    require(floor <= _pool.ceiling, "Ceiling must be greater than or equal to the floor.");
     _pool.floor = floor;
     updatePoolState(0, false);
     return true;
@@ -642,7 +642,7 @@ contract EvolutionToken is ERC20Interface, BoardApprovable, Pausable, Freezable 
   * @return A bool to show it completed successfully
   */
   function setPoolCeiling(uint256 ceiling) external isBoardMember isBoardApproved returns(bool) {
-    require(ceiling > _pool.floor, "Ceiling must be greater than the ceiling.");
+    require(ceiling >= _pool.floor, "Ceiling must be greater than or equal to the ceiling.");
     _pool.ceiling = ceiling;
     updatePoolState(0, false);
     return true;
@@ -810,8 +810,10 @@ contract EvolutionToken is ERC20Interface, BoardApprovable, Pausable, Freezable 
 
     emit onPriceChange(_currentPrice);
 
+    require(address(this).balance >= ethValueLeftAfterDividend, "Unable to transfer remaining funds.");
     msg.sender.transfer(ethValueLeftAfterDividend);
     updatePoolState(ethValueLeftAfterDividend.add(holderDividend), false);
+
 
     emit onTokenSell(msg.sender, tokenAmount, holderDividend);
 
@@ -1004,6 +1006,7 @@ contract EvolutionToken is ERC20Interface, BoardApprovable, Pausable, Freezable 
   function claimDividendCore(address payable sender) private whenNotPaused {
     uint256 owing = dividendBalanceOf(sender);
 
+    require(address(this).balance >= owing, "Unable to transfer dividend.");
     require(_pool.totalDividendsClaimed.add(owing) <= _pool.totalDividends.add(_pool.overdrawPool),
               "Unable to fund dividend claim. Fund the overdrawPool.");
 
