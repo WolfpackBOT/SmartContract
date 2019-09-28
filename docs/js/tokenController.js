@@ -149,7 +149,7 @@
                 $scope.recalculateBuyEstimate = function () {
                     var wei = web3.toDecimal(web3.toWei($scope.buyEthAmount));
                     if (wei > $scope.currentPrice) {
-                        $scope.contract.estimateBuy(wei, $scope.referrerAddress !== "0x0", (error, result) => {
+                        $scope.contract.estimateBuy(wei, (error, result) => {
                             $scope.$apply(function () {
                                 $scope.validBuyAmount = true;
                                 $scope.buyPriceTokensPerEth = '' + web3.toDecimal(result[0]);
@@ -599,7 +599,16 @@
                                     $scope.buyReferrerPercent = web3.toDecimal(result[6]);
                                     $scope.buyHolderPercent = web3.toDecimal(result[7]);
                                     $scope.sellHolderPercent = web3.toDecimal(result[8]);
-                                    $scope.pctToCeiling = ($scope.poolTotal / $scope.poolCeiling * 100).toFixed(2);
+
+                                    if($scope.poolCeiling < 0) {
+                                        $scope.pctToCeiling = ($scope.poolTotal / $scope.poolCeiling * 100).toFixed(2);
+                                    } else {
+                                        if($scope.poolTotal > 0) {
+                                            $scope.pctToCeiling = 0;
+                                        } else {
+                                            $scope.pctToCeiling = 100;
+                                        }
+                                    }
 
                                     if (!$scope.sellAllowed) {
                                         $scope.sellTokenCount = null;
