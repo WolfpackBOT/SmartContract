@@ -604,9 +604,9 @@
                                         $scope.pctToCeiling = ($scope.poolTotal / $scope.poolCeiling * 100).toFixed(2);
                                     } else {
                                         if($scope.poolTotal > 0) {
-                                            $scope.pctToCeiling = 0;
-                                        } else {
                                             $scope.pctToCeiling = 100;
+                                        } else {
+                                            $scope.pctToCeiling = 0;
                                         }
                                     }
 
