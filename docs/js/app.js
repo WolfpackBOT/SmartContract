@@ -6,9 +6,9 @@ app.config(["$provide", "$locationProvider",
         $locationProvider.html5Mode(true);
     }])
     .constant("websiteSettings", {
-        baseUrl: "https://wolfpackbot.github.io/SmartContract/",
-        smartContractAddress: "0x99226af74f4b4a7e899ded8151ba0e0fd3e0825e",
-        environment: "test"
+        baseUrl: window.location.protocol + "//" + window.location.hostname + "/SmartContract/",
+        smartContractAddress: window.location.protocol === "https:" ? "0x43b44d1b890c4cd52df6d442d23f16eaf9a398ef" : "0x43b44d1b890c4cd52df6d442d23f16eaf9a398ef",
+        environment: window.location.protocol === "https:" ? "production" : "test"
     })
     // allow you to format a text input field.
     // <input type="text" ng-model="test" format="number" />

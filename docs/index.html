@@ -174,9 +174,10 @@
                                                         <input type="text" style="text-align: center;" ng-model="burn_val" ng-disabled="!contractBoardStatusApproved" class="form-control-sm" />
                                                         <button type="button" class="btn btn-default btn-sm" ng-click="executeContractCommand1('burn', burn_val)" ng-disabled="!contractBoardStatusApproved || !burn_val">Execute</button>
                                                     </div>
-                                                    <div class="col-md-4">
-                                                        <b>Pause</b><br />
-                                                        <div id="pause" class="switch" data-state="{{paused}}"></div>
+                                                    <div class=col-md-4>
+                                                        <b>setInitialPrice</b><br />
+                                                        <input type="text" ng-model="setInitialPrice_val" class="form-control-sm" />
+                                                        <button type="button" class="btn btn-default btn-sm" ng-click="setInitialPrice()" ng-disabled="!setInitialPrice_val">Execute</button>
                                                     </div>
                                                 </div>
                                                 <div class="row">
@@ -206,6 +207,10 @@
                                                         <b>setMinimumEthSellAmount</b><br />
                                                         <input type="text" ng-model="setMinimumEthSellAmount_val" ng-disabled="!contractBoardStatusApproved" class="form-control-sm" />
                                                         <button type="button" class="btn btn-default btn-sm" ng-click="executeContractCommand1('setMinimumEthSellAmount', setMinimumEthSellAmount_val)" ng-disabled="!contractBoardStatusApproved || !setMinimumEthSellAmount_val">Execute</button>
+                                                    </div>
+                                                    <div class="col-md-4">
+                                                        <b>Pause</b><br />
+                                                        <div id="pause" class="switch" data-state="{{paused}}"></div>
                                                     </div>
                                                 </div>
                                             </fieldset>
@@ -537,8 +542,8 @@
     <script src="js/dependencies/btnSwitch/jquery.btnswitch.js"></script>
     <script src="js/dependencies/polyfill.min.js"></script>
     <script src="js/dependencies/web3.min.js"></script>
-    <script src="js/app.js?v=20190926_1554"></script>
-    <script src="js/tokenController.js?v=20190928_0728"></script>
+    <script src="js/app.js?v=20191006_0708"></script>
+    <script src="js/tokenController.js?v=20191006_0708"></script>
     <script src="js/tokenTransactionDialogController.js"></script>
 </body>
 </html>

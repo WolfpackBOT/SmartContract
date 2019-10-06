@@ -351,6 +351,7 @@ contract EvolutionToken is ERC20Interface, BoardApprovable, Pausable, Freezable 
   uint256 private _minimumEthSellAmount;
   uint256 private _percentBase;
   address payable _owner;
+  bool _hasSetInitialPrice;
   mapping(address => uint256) private _balances;
   mapping (address => uint256) private _lastDividends;
 
@@ -412,7 +413,6 @@ contract EvolutionToken is ERC20Interface, BoardApprovable, Pausable, Freezable 
     _symbol = "EvolV";
     _decimals = 0;
     _supply = 600000000;
-    _currentPrice = .000053 ether;
     _increment = .000000001 ether;
     _lowerCap = .0000053 ether;
     _minimumEthSellAmount = .01 ether;
@@ -532,7 +532,7 @@ contract EvolutionToken is ERC20Interface, BoardApprovable, Pausable, Freezable 
   }
 
   /**
-  * @dev Sets the name of the token. OnlyOwner
+  * @dev Sets the name of the token.
   * @param newName The new token name.
   */
   function setName(string calldata newName) external isBoardMember isBoardApproved {
@@ -540,7 +540,7 @@ contract EvolutionToken is ERC20Interface, BoardApprovable, Pausable, Freezable 
   }
 
   /**
-  * @dev Sets the symbol of the token. OnlyOwner
+  * @dev Sets the symbol of the token.
   * @param newSymbol The new symbol for the token.
   */
   function setSymbol(string calldata newSymbol) external isBoardMember isBoardApproved {
@@ -548,7 +548,17 @@ contract EvolutionToken is ERC20Interface, BoardApprovable, Pausable, Freezable 
   }
 
   /**
-  * @dev Sets the increment for buys and sells. OnlyOwner
+  * @dev Sets the initial price.
+  * @param price The new initial price.
+  */
+  function setInitialPrice(uint256 price) external isBoardMember {
+    require(!_hasSetInitialPrice, "This can only be called once.");
+    _currentPrice = price;
+    _hasSetInitialPrice = true;
+  }
+
+  /**
+  * @dev Sets the increment for buys and sells.
   * @param newIncrement The new increment for buys and sells.
   */
   function setIncrement(uint256 newIncrement) external isBoardMember isBoardApproved {
@@ -556,7 +566,7 @@ contract EvolutionToken is ERC20Interface, BoardApprovable, Pausable, Freezable 
   }
 
   /**
-  * @dev Sets the lower cap of the token value. OnlyOwner
+  * @dev Sets the lower cap of the token value.
   * @param newLowerCap The new lower cap of the token value.
   */
   function setLowerCap(uint256 newLowerCap) external isBoardMember isBoardApproved {
@@ -564,7 +574,7 @@ contract EvolutionToken is ERC20Interface, BoardApprovable, Pausable, Freezable 
   }
 
   /**
-  * @dev Updates the minimum ETH sell amount. OnlyOwner
+  * @dev Updates the minimum ETH sell amount.
   * @param newMinimumEthSellAmount The new minimum amount of ETH for a sell.
   */
   function setMinimumEthSellAmount(uint256 newMinimumEthSellAmount) external isBoardMember isBoardApproved {
@@ -728,8 +738,8 @@ contract EvolutionToken is ERC20Interface, BoardApprovable, Pausable, Freezable 
     uint256 poolIncreaseAmt;
 
     // Dividends
-      referralDividend = value.div(divideByPercent(_pool.buyReferrerPercent));
-      holderDividend = value.div(divideByPercent(_pool.buyHolderPercent));
+    referralDividend = value.div(divideByPercent(_pool.buyReferrerPercent));
+    holderDividend = value.div(divideByPercent(_pool.buyHolderPercent));
 
     // Tokens
     uint256 allDividends = holderDividend.add(referralDividend);
@@ -813,7 +823,6 @@ contract EvolutionToken is ERC20Interface, BoardApprovable, Pausable, Freezable 
     require(address(this).balance >= ethValueLeftAfterDividend, "Unable to transfer remaining funds.");
     msg.sender.transfer(ethValueLeftAfterDividend);
     updatePoolState(ethValueLeftAfterDividend.add(holderDividend), false);
-
 
     emit onTokenSell(msg.sender, tokenAmount, holderDividend);
 

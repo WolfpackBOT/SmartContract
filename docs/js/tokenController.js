@@ -64,7 +64,6 @@
                 $scope.expectedNetwork = websiteSettings.environment === "production" ? "1" : "3";
                 $scope.expectedNetworkName = websiteSettings.environment === "production" ? "Main Ethereum Network" : "Ropsten Test Network";
                 $scope.currentNetwork = null;
-
                 $scope.isBoardMember = false;
                 $scope.totalBoardMembers = 0;
                 $scope.boardMemberApproved = false;
@@ -92,8 +91,9 @@
                 $scope.totalDividends = 0;
                 $scope.totalDividendsClaimed = 0;
                 $scope.dividendsUnclaimed = 0;
+                $scope.setInitialPrice_val = null;
                 
-                $scope.leaderboardExlusions = ["0xD1D9Dad7FC00A933678eEf64b3CaC3a3AF0a5AB4", "0xE242CeF45608826216f7cA2d548c48562b50CdD0", "0x7B5973D4F41Af6bA50e2feD457d7c91D5A33349C", "0x54168F68D51a86DEdA3D5EA14A3E45bE74EFfbd4", "0x6102dB8E1d47D359CafF9ADa4f0b0a8378d35109", "0xaBE5EE06B246e23d69ffb44F6d5996686b69ce3b"];
+                $scope.leaderboardExclusions = ["0xD1D9Dad7FC00A933678eEf64b3CaC3a3AF0a5AB4", "0xE242CeF45608826216f7cA2d548c48562b50CdD0", "0x7B5973D4F41Af6bA50e2feD457d7c91D5A33349C", "0x54168F68D51a86DEdA3D5EA14A3E45bE74EFfbd4", "0x6102dB8E1d47D359CafF9ADa4f0b0a8378d35109", "0xaBE5EE06B246e23d69ffb44F6d5996686b69ce3b"];
 
                 $scope.copyReferral = function () {
                     var referralUrl = document.getElementById("referralUrl");
@@ -213,6 +213,7 @@
                     $scope.setPoolBuyMintOwnerPercent_val = null;
                     $scope.setPoolSellHoldOwnerPercent_val = null;
                     $scope.fundOverdrawPool_val = null;
+                    $scope.setInitialPrice_val = null;
                 };
 
                 $scope.buyTokens = function () {
@@ -262,6 +263,17 @@
 
                 $scope.transfer = function () {
                     $scope.contract.transfer($scope.transferTokenAddress, parseInt($scope.transferTokenCount, 10), {
+                        gas: $scope.gasPrice
+                    }, function (err, result) {
+                        if (!err && result) {
+                            $scope.resetInputs();
+                            $scope.showTransaction(result, $scope.ethScanBaseUrl + "/tx/" + result);
+                        }
+                    });
+                };
+
+                $scope.setInitialPrice = function () {
+                    $scope.contract.setInitialPrice(web3.toWei($scope.setInitialPrice_val, "ether"), {
                         gas: $scope.gasPrice
                     }, function (err, result) {
                         if (!err && result) {
@@ -373,7 +385,7 @@
                 };
 
                 $scope.isInExclusionList = function (a) {
-                    return _.findIndex($scope.leaderboardExlusions, function (o) { return o.toLowerCase() === a.toLowerCase(); }) > -1;
+                    return _.findIndex($scope.leaderboardExclusions, function (o) { return o.toLowerCase() === a.toLowerCase(); }) > -1;
                 };
 
                 $scope.shouldAddAddress = function (a, arr) {
