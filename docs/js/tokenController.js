@@ -30,10 +30,10 @@
                 $scope.tokenBalance = 0;
                 $scope.dividendBalance = "0";
                 $scope.dividendBalanceNumber = 0;
-                $scope.currentPrice = 53000000000000;
+                $scope.currentPrice = 0;
                 $scope.currentPriceEth = "0.000053";
-                $scope.tokenName = "";
-                $scope.tokenSymbol = "";
+                $scope.tokenName = "Evolution Token";
+                $scope.tokenSymbol = "EvolV";
                 $scope.buyPriceTokensPerEth = "";
                 $scope.sellPriceEthPerToken = "";
                 $scope.sellAllowed = false;

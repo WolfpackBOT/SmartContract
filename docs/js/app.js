@@ -7,7 +7,7 @@ app.config(["$provide", "$locationProvider",
     }])
     .constant("websiteSettings", {
         baseUrl: window.location.protocol + "//" + window.location.hostname + "/SmartContract/",
-        smartContractAddress: window.location.protocol === "https:" ? "0x43b44d1b890c4cd52df6d442d23f16eaf9a398ef" : "0x43b44d1b890c4cd52df6d442d23f16eaf9a398ef",
+        smartContractAddress: window.location.protocol === "https:" ? "0x12528042299e0fca4d44ae4f42359319b8901fa2" : "0x43b44d1b890c4cd52df6d442d23f16eaf9a398ef",
         environment: window.location.protocol === "https:" ? "production" : "test"
     })
     // allow you to format a text input field.

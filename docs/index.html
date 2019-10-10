@@ -295,7 +295,7 @@
                                             </div>
         
                                             <div style="margin-top: 1em;">
-                                                <button type="button" class="btn btn-primary btn-block" ng-click="buyTokens()" ng-disabled="!validBuyAmount || paused">Buy</button>
+                                                <button type="button" class="btn btn-primary btn-block" ng-click="buyTokens()" ng-disabled="!currentPrice || !validBuyAmount || paused">Buy</button>
                                             </div>
                                         </div>
                                     </div>
