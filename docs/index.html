@@ -357,7 +357,7 @@
                                         <h4>Actions</h4>
                                         <div style="margin-top:1em;">
                                             <button type="button" class="btn btn-default btn-block" ng-disabled="dividendBalanceNumber === 0 || paused" ng-click="claimDividends()">Claim dividends</button>
-                                            <button type="button" class="btn btn-default btn-block" ng-disabled="dividendBalanceNumber < currentPriceEth || paused" ng-click="reinvestDividends()">Reinvest dividends</button>
+                                            <button type="button" class="btn btn-default btn-block" ng-disabled="dividendBalanceNumber === 0 || dividendBalanceNumber < currentPriceEth || paused" ng-click="reinvestDividends()">Reinvest dividends</button>
                                         </div>
                                     </div>
                                 </div>
