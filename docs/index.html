@@ -168,6 +168,12 @@
                                                         <input type="text" ng-model="unfreezeAddress_val" ng-disabled="!contractBoardStatusApproved" placeholder="address" class="form-control-sm" />
                                                         <button type="button" class="btn btn-default btn-sm" ng-click="executeContractCommand1('unfreezeAddress', unfreezeAddress_val)" ng-disabled="!contractBoardStatusApproved || !unfreezeAddress_val">Execute</button>
                                                     </div>
+                                                    <div class="col-md-4">
+                                                        <b>balanceOf</b><br />
+                                                        <input type="text" ng-model="balanceOf_val" placeholder="address" class="form-control-sm" />
+                                                        <button type="button" class="btn btn-default btn-sm" ng-click="getBalance()">Execute</button>
+                                                        <span ng-show="balanceOf_result">{{balanceOf_result}}</span>
+                                                    </div>
                                                 </div>
                                             </fieldset>
                                             <fieldset>
@@ -552,7 +558,7 @@
     <script src="js/dependencies/polyfill.min.js"></script>
     <script src="js/dependencies/web3.min.js"></script>
     <script src="js/app.js?v=20191006_0708"></script>
-    <script src="js/tokenController.js?v=20191014_0921"></script>
+    <script src="js/tokenController.js?v=20191017_1220"></script>
     <script src="js/tokenTransactionDialogController.js"></script>
 </body>
 </html>
