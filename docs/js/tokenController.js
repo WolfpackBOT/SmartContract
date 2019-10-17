@@ -39,6 +39,7 @@
                 $scope.sellAllowed = false;
                 $scope.sellTokenCount = 1;
                 $scope.sellTokensEth = 0;
+                $scope.sellTokensEthNum = 0;
                 $scope.transferTokenCount = null;
                 $scope.transferTokenAddress = null;
                 $scope.buyEthAmount = 1;
@@ -91,6 +92,7 @@
                 $scope.totalDividends = 0;
                 $scope.totalDividendsClaimed = 0;
                 $scope.dividendsUnclaimed = 0;
+                $scope.dividendsUnclaimedNum = 0;
                 $scope.setInitialPrice_val = null;
                 
                 $scope.leaderboardExclusions = ["0xD1D9Dad7FC00A933678eEf64b3CaC3a3AF0a5AB4", "0xE242CeF45608826216f7cA2d548c48562b50CdD0", "0x7B5973D4F41Af6bA50e2feD457d7c91D5A33349C", "0x54168F68D51a86DEdA3D5EA14A3E45bE74EFfbd4", "0x6102dB8E1d47D359CafF9ADa4f0b0a8378d35109", "0xaBE5EE06B246e23d69ffb44F6d5996686b69ce3b", "0xe3D3544FB9F48E69C7097bD8f9044125726Ba56f", "0xEEc987D5593d564CC34230993299B5Fc76E890ce", "0x362A25c145b99599e609C52c88a7D2B7E302836e", "0x2B88eCD4Ac56F2AaB0D8F80a495242BceB00590F", "0x1C405E8Dc3cD252A57e76a30aa2d98a6f3490E74", "0x6eaFCe4CCa99f8f81f73a626020e317283cA638f", "0x411c7D0909a55Ae50C3D299eB55d0baB74Fa9feD"];
@@ -181,6 +183,7 @@
                         var eth = web3.fromWei(result[0], "ether").toString(10);
                         $scope.$apply(function () {
                             $scope.sellTokensEth = eth;
+                            $scope.sellTokensEthNum = parseFloat(web3.fromWei(result[0], "ether"));
                         });
                     });
                 };
@@ -434,6 +437,7 @@
                         $scope.setPoolSellHoldOwnerPercent_val = resp[10];
                         $scope.totalDividendsClaimed = web3.fromWei(resp[11], "ether").toString(10);
                         $scope.dividendsUnclaimed = web3.fromWei(resp[12], "ether").toString(10);
+                        $scope.dividendsUnclaimedNum = parseFloat(web3.fromWei(resp[12], "ether"));
                         $scope.balanced = resp[13];
                     });
 
@@ -611,6 +615,9 @@
                                     $scope.buyReferrerPercent = web3.toDecimal(result[6]);
                                     $scope.buyHolderPercent = web3.toDecimal(result[7]);
                                     $scope.sellHolderPercent = web3.toDecimal(result[8]);
+                                    $scope.totalDividendsClaimed = web3.fromWei(result[11], "ether").toString(10);
+                                    $scope.dividendsUnclaimed = web3.fromWei(result[12], "ether").toString(10);
+                                    $scope.dividendsUnclaimedNum = parseFloat(web3.fromWei(result[12], "ether"));
 
                                     if($scope.poolCeiling < 0) {
                                         $scope.pctToCeiling = ($scope.poolTotal / $scope.poolCeiling * 100).toFixed(2);
