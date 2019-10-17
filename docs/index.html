@@ -319,7 +319,7 @@
                                                 <small ng-show="sellAllowed && tokenBalance > 0 && poolTotal >= sellTokensEthNum + dividendsUnclaimedNum">
                                                     Estimated {{sellTokensEth}} ETH from sell
                                                 </small>
-                                                <small ng-show="sellAllowed && poolTotal < sellTokensEthNum + dividendsUnclaimedNum">
+                                                <small ng-show="sellAllowed && tokenBalance > 0 && poolTotal < sellTokensEthNum + dividendsUnclaimedNum">
                                                     {{sellTokensEth}} ETH exceeds pool total!
                                                 </small>
                                             </div>
@@ -552,7 +552,7 @@
     <script src="js/dependencies/polyfill.min.js"></script>
     <script src="js/dependencies/web3.min.js"></script>
     <script src="js/app.js?v=20191006_0708"></script>
-    <script src="js/tokenController.js?v=20191014_0710"></script>
+    <script src="js/tokenController.js?v=20191014_0921"></script>
     <script src="js/tokenTransactionDialogController.js"></script>
 </body>
 </html>
