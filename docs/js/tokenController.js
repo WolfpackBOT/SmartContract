@@ -336,6 +336,24 @@
                     });
                 };
 
+
+                $scope.shouldDisableBurn = function() {
+                    return (!$scope.burnTokenCount || parseInt($scope.burnTokenCount, 10) < 1 || parseInt($scope.burnTokenCount, 10) > parseInt($scope.tokenBalance, 10))
+                };
+
+                $scope.burn = function () {
+                    if(confirm("Are you sure you want to burn " + $scope.burnTokenCount + " EvolV?")) {
+                        $scope.contract.burn(parseInt($scope.burnTokenCount, 10), {
+                            gas: $scope.gasPrice
+                        }, function (err, result) {
+                            if (!err && result) {
+                                $scope.resetInputs();
+                                $scope.showTransaction(result, $scope.ethScanBaseUrl + "/tx/" + result);
+                            }
+                        });
+                    }
+                };
+
                 $scope.processEvents = function (events) {
                     var deferred = $q.defer();
 
