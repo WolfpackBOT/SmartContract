@@ -322,16 +322,19 @@
                                                 <small ng-show="!sellAllowed">
                                                     Not allowed yet
                                                 </small>
-                                                <small ng-show="sellAllowed && tokenBalance > 0 && contractEthValue >= sellTokensEthNum + dividendsUnclaimedNum">
+                                                <small ng-show="sellAllowed && tokenBalance > 0 && sellTokenCount <= tokenBalance && (contractEthValue >= sellTokensEthNum + dividendsUnclaimedNum && sellTokensEthNum < poolTotal)">
                                                     Estimated {{sellTokensEth}} ETH from sell
                                                 </small>
-                                                <small ng-show="sellAllowed && tokenBalance > 0 && contractEthValue < sellTokensEthNum + dividendsUnclaimedNum">
+                                                <small ng-show="sellAllowed && tokenBalance > 0 && sellTokenCount <= tokenBalance && (contractEthValue < sellTokensEthNum + dividendsUnclaimedNum || sellTokensEthNum > poolTotal)">
                                                     {{sellTokensEth}} ETH exceeds pool total!
+                                                </small>
+                                                <small ng-show="sellTokenCount > tokenBalance">
+                                                    Cannot sell more than you have!
                                                 </small>
                                             </div>
 
                                             <div style="margin-top: 1em;">
-                                                <button type="button" class="btn btn-primary btn-block" ng-click="sellTokens()" ng-disabled="!sellAllowed || !validSellAmount || paused || contractEthValue < sellTokensEthNum + dividendsUnclaimedNum">Sell</button>
+                                                <button type="button" class="btn btn-primary btn-block" ng-click="sellTokens()" ng-disabled="!sellAllowed || !validSellAmount || paused || (contractEthValue < sellTokensEthNum + dividendsUnclaimedNum || sellTokensEthNum > poolTotal) || sellTokenCount > tokenBalance">Sell</button>
                                             </div>
                                         </div>
                                     </div>
