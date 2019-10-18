@@ -459,7 +459,7 @@
                         $scope.setPoolFloor_val = resp[1];
                         $scope.setPoolCeiling_val = resp[2];
                         $scope.totalDividends = web3.fromWei(resp[3], "ether").toString(10);
-
+                        $scope.contractEthValue = web3.toDecimal(web3.fromWei(resp[5], "ether"));
                         $scope.setPoolBuyReferrerPercent_val = resp[6];
                         $scope.setPoolBuyHolderPercent_val = resp[7];
                         $scope.setPoolSellHolderPercent_val = resp[8];
