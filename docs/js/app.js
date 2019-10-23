@@ -10,6 +10,23 @@ app.config(["$provide", "$locationProvider",
         smartContractAddress: window.location.protocol === "https:" ? "0x12528042299e0fca4d44ae4f42359319b8901fa2" : "0x43b44d1b890c4cd52df6d442d23f16eaf9a398ef",
         environment: window.location.protocol === "https:" ? "production" : "test"
     })
+    .run(["$rootScope",
+		function ($rootScope) {
+            $rootScope.safeApply = function(fn) {
+                if (this.$root && this.$root.$$phase) {
+                    var phase = this.$root.$$phase;
+                    if (phase == '$apply' || phase == '$digest') {
+                        if (fn && (typeof(fn) === 'function')) {
+                            fn();
+                        }
+                    } else {
+                        this.$apply(fn);
+                    }
+                } else {
+                    this.$apply(fn);
+                }
+            };
+	}])
     // allow you to format a text input field.
     // <input type="text" ng-model="test" format="number" />
     // <input type="text" ng-model="test" format="currency" />

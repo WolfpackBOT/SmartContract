@@ -4,26 +4,24 @@
     var app = angular.module("app");
 
     app.controller("tokenController",
-        ["$scope", "$q", "$http", "$window", "$uibModal", "$location", "websiteSettings",
-            function ($scope, $q, $http, $window, $uibModal, $location, websiteSettings) {
-                $scope.web3 = new Web3(Web3.givenProvider);
-                document.getElementById("mainPageBody").style.visibility = "visible";
-
-                $scope.baseUrl = websiteSettings.baseUrl;
-                $scope.contractAddress = websiteSettings.smartContractAddress;
-
+        ["$rootScope", "$scope", "$q", "$timeout", "$interval", "$http", "$window", "$uibModal", "$location", "websiteSettings",
+            function ($rootScope, $scope, $q, $timeout, $interval, $http, $window, $uibModal, $location, websiteSettings) {
                 var refParam = $location.search().ref;
                 if(refParam) {
                     $scope.referrerAddress = refParam;
                 }
 
-                $scope.loading = true;
+                $scope.web3 = new Web3(Web3.givenProvider);
+                document.getElementById("mainPageBody").style.visibility = "visible";
+                $scope.baseUrl = websiteSettings.baseUrl;
+                $scope.contractAddress = websiteSettings.smartContractAddress;
+                $scope.loading = false;
+                $scope.gettingData = false;
                 $scope.loadingMetamask = true;
                 $scope.defaultAccount = null;
                 $scope.gasPrice = 2000000;
                 $scope.error = null;
                 $scope.message = "";
-                $scope.loading = true;
                 $scope.hasWeb3 = false;
                 $scope.showInstallMetaMask = false;
                 $scope.contract = null;
@@ -96,7 +94,7 @@
                 $scope.setInitialPrice_val = null;
                 $scope.balanceOf_val = null;
                 $scope.balanceOf_result = null;
-                
+
                 $scope.leaderboardExclusions = ["0xD1D9Dad7FC00A933678eEf64b3CaC3a3AF0a5AB4", "0xE242CeF45608826216f7cA2d548c48562b50CdD0", "0x7B5973D4F41Af6bA50e2feD457d7c91D5A33349C", "0x54168F68D51a86DEdA3D5EA14A3E45bE74EFfbd4", "0x6102dB8E1d47D359CafF9ADa4f0b0a8378d35109", "0xaBE5EE06B246e23d69ffb44F6d5996686b69ce3b", "0xe3D3544FB9F48E69C7097bD8f9044125726Ba56f", "0xEEc987D5593d564CC34230993299B5Fc76E890ce", "0x362A25c145b99599e609C52c88a7D2B7E302836e", "0x2B88eCD4Ac56F2AaB0D8F80a495242BceB00590F", "0x1C405E8Dc3cD252A57e76a30aa2d98a6f3490E74", "0x6eaFCe4CCa99f8f81f73a626020e317283cA638f", "0x411c7D0909a55Ae50C3D299eB55d0baB74Fa9feD"];
 
                 $scope.copyReferral = function () {
@@ -154,13 +152,13 @@
                     var wei = web3.toDecimal(web3.toWei($scope.buyEthAmount));
                     if (wei > $scope.currentPrice) {
                         $scope.contract.estimateBuy(wei, (error, result) => {
-                            $scope.$apply(function () {
+                            $rootScope.safeApply(function () {
                                 $scope.validBuyAmount = true;
                                 $scope.buyPriceTokensPerEth = '' + web3.toDecimal(result[0]);
                             });
                         });
                     } else {
-                        $scope.$apply(function () {
+                        $rootScope.safeApply(function () {
                             $scope.validBuyAmount = false;
                             $scope.buyPriceTokensPerEth = "0";
                         });
@@ -183,7 +181,7 @@
 
                     $scope.contract.estimateSell(tokenCount, (error, result) => {
                         var eth = web3.fromWei(result[0], "ether").toString(10);
-                        $scope.$apply(function () {
+                        $rootScope.safeApply(function () {
                             $scope.sellTokensEth = eth;
                             $scope.sellTokensEthNum = parseFloat(web3.fromWei(result[0], "ether"));
                         });
@@ -303,39 +301,44 @@
                 };
 
                 $scope.wireUpEvents = function () {
-                    $window.ethereum.on('accountsChanged', function (accounts) {
-                        if (!$scope.loading) {
-                            $scope.resetInputs();
-                            $scope.load();
-                        }
-                    });
-
-                    $window.ethereum.on('networkChanged', function (networkId) {
-                        if (!$scope.loading) {
-                            web3.version.getNetwork((err, netId) => {
-                                $scope.currentNetwork = netId;
-                            });
-                            $scope.load();
-                        }
-                    });
-
-                    $scope.contract.allEvents({ fromBlock: "latest", toBlock: "latest" }).watch((error, result) => {
-                        if (!error) {
-                            $scope.refreshStats();
-                        }
-                    });
-
-                    $scope.eventsSubscribed = true;
+                    if(!$scope.eventsSubscribed) {
+                        $scope.eventsSubscribed = true;
+    
+                        $window.ethereum.on('accountsChanged', function (accounts) {
+                            if (!$scope.loading && !$scope.gettingData) {
+                                $scope.resetInputs();
+                                $scope.load();
+                            }
+                        });
+    
+                        $window.ethereum.on('networkChanged', function (networkId) {
+                            if (!$scope.loading && !$scope.gettingData) {
+                                web3.version.getNetwork((err, netId) => {
+                                    $scope.currentNetwork = netId;
+                                });
+                                $scope.load();
+                            }
+                        });
+    
+                        $scope.contract.allEvents({ fromBlock: "latest", toBlock: "latest" }).watch((error, result) => {
+                            if (!error && !$scope.loading && !$scope.gettingData) {
+                                $scope.refreshStats().then(function(updated){
+                                    if(updated) {
+                                        $rootScope.safeApply();
+                                    }
+                                });
+                            }
+                        });
+                    }
                 };
 
                 $scope.getBalance = function() {
                     $scope.contract.balanceOf($scope.balanceOf_val, (error, result) => {
-                        $scope.$apply(function(){
+                        $rootScope.safeApply(function(){
                             $scope.balanceOf_result = web3.toDecimal(result);
                         });
                     });
                 };
-
 
                 $scope.shouldDisableBurn = function() {
                     return (!$scope.burnTokenCount || parseInt($scope.burnTokenCount, 10) < 1 || parseInt($scope.burnTokenCount, 10) > parseInt($scope.tokenBalance, 10))
@@ -478,252 +481,269 @@
                 };
 
                 $scope.refreshStats = function () {
-                    $scope.contract.name.call((error, resp) => {
-                        $scope.tokenName = resp;
-                    });
-                    $scope.contract.symbol.call((error, resp) => {
-                        $scope.tokenSymbol = resp;
-                    });
+                    var deferred = $q.defer();
 
-                    $scope.contract.isSenderBoardMember.call((error, result) => {
-                        $scope.isBoardMember = result;
+                    if(!$scope.gettingData) {
+                        $scope.gettingData = true;
+                        $scope.leaderboardData = [];
+                        $scope.recentActivity = [];
+    
+                        var refParam = $location.search().ref;
+                        if($scope.referrerAddress) {
+                            if($scope.referrerAddress !== "0x0") {
+                                if($scope.referrerAddress.toUpperCase() === $scope.defaultAccount.toUpperCase()) {
+                                    $scope.referrerAddress = "0x0";
+                                }
+                            }
+                        } else if(refParam) {
+                            $scope.referrerAddress = refParam;
+                        } else {
+                            $scope.referrerAddress = "0x0";
+                        }
+    
+                        $scope.contract.name.call((error, resp) => {
+                            $scope.tokenName = resp;
+    
+                            $scope.contract.symbol.call((error, resp) => {
+                                $scope.tokenSymbol = resp;
 
-                        if ($scope.isBoardMember) {
-                            $scope.refreshBoardData();
-
-                            $scope.contract.isSenderBoardMemberApproved.call((error, result2) => {
-                                $scope.boardMemberApproved = result2;
-
-                                $("#boardMemberApproval").btnSwitch({
-                                    OnValue: true,
-                                    OnCallback: function (val, instance) {
-                                        $scope.contract.addBoardMemberApproval(val, {
-                                            gas: $scope.gasPrice
-                                        }, function (err, addBoardMemberApprovalResult) {
-                                            if (!err && addBoardMemberApprovalResult) {
-                                                $scope.showTransaction(addBoardMemberApprovalResult, $scope.ethScanBaseUrl + "/tx/" + addBoardMemberApprovalResult);
-                                            }
+                                $scope.contract.isSenderBoardMember.call((error, result) => {
+                                    $scope.isBoardMember = result;
+            
+                                    if ($scope.isBoardMember) {
+                                        $scope.refreshBoardData();
+            
+                                        $scope.contract.isSenderBoardMemberApproved.call((error, result2) => {
+                                            $scope.boardMemberApproved = result2;
+            
+                                            $("#boardMemberApproval").btnSwitch({
+                                                OnValue: true,
+                                                OnCallback: function (val, instance) {
+                                                    $scope.contract.addBoardMemberApproval(val, {
+                                                        gas: $scope.gasPrice
+                                                    }, function (err, addBoardMemberApprovalResult) {
+                                                        if (!err && addBoardMemberApprovalResult) {
+                                                            $scope.showTransaction(addBoardMemberApprovalResult, $scope.ethScanBaseUrl + "/tx/" + addBoardMemberApprovalResult);
+                                                        }
+                                                    });
+                                                },
+                                                OffValue: false,
+                                                OffCallback: function (val, instance) {
+                                                    $scope.contract.addBoardMemberApproval(val, {
+                                                        gas: $scope.gasPrice
+                                                    }, function (err, addBoardMemberApproval2Result) {
+                                                        if (!err && addBoardMemberApproval2Result) {
+                                                            $scope.showTransaction(addBoardMemberApproval2Result, $scope.ethScanBaseUrl + "/tx/" + addBoardMemberApproval2Result);
+                                                        }
+                                                    });
+                                                },
+                                                Theme: "Light",
+                                                ToggleState: $scope.boardMemberApproved,
+                                                ConfirmChanges: false
+                                            });
+            
+                                            $scope.contract.paused.call((error, resultPaused) => {
+                                                $scope.paused = resultPaused;
+            
+                                                if ($scope.contractBoardStatusApproved) {
+                                                    $("#pause").btnSwitch({
+                                                        OnValue: true,
+                                                        OnCallback: function (val, instance) {
+                                                            $scope.contract.pause({
+                                                                gas: $scope.gasPrice
+                                                            }, function (err, pauseResult) {
+                                                                if (!err && pauseResult) {
+                                                                    $scope.showTransaction(pauseResult, $scope.ethScanBaseUrl + "/tx/" + pauseResult);
+                                                                }
+                                                            });
+                                                        },
+                                                        OffValue: false,
+                                                        OffCallback: function (val, instance) {
+                                                            $scope.contract.unpause({
+                                                                gas: $scope.gasPrice
+                                                            }, function (err, unpauseResult) {
+                                                                if (!err && unpauseResult) {
+                                                                    $scope.showTransaction(unpauseResult, $scope.ethScanBaseUrl + "/tx/" + unpauseResult);
+                                                                }
+                                                            });
+                                                        },
+                                                        Theme: "Light",
+                                                        ToggleState: $scope.paused,
+                                                        ConfirmChanges: false
+                                                    });
+                                                }
+                                            });
                                         });
-                                    },
-                                    OffValue: false,
-                                    OffCallback: function (val, instance) {
-                                        $scope.contract.addBoardMemberApproval(val, {
-                                            gas: $scope.gasPrice
-                                        }, function (err, addBoardMemberApproval2Result) {
-                                            if (!err && addBoardMemberApproval2Result) {
-                                                $scope.showTransaction(addBoardMemberApproval2Result, $scope.ethScanBaseUrl + "/tx/" + addBoardMemberApproval2Result);
-                                            }
-                                        });
-                                    },
-                                    Theme: "Light",
-                                    ToggleState: $scope.boardMemberApproved,
-                                    ConfirmChanges: false
-                                });
-
-                                $scope.contract.paused.call((error, resultPaused) => {
-                                    $scope.paused = resultPaused;
-
-                                    if ($scope.contractBoardStatusApproved) {
-                                        $("#pause").btnSwitch({
-                                            OnValue: true,
-                                            OnCallback: function (val, instance) {
-                                                $scope.contract.pause({
-                                                    gas: $scope.gasPrice
-                                                }, function (err, pauseResult) {
-                                                    if (!err && pauseResult) {
-                                                        $scope.showTransaction(pauseResult, $scope.ethScanBaseUrl + "/tx/" + pauseResult);
-                                                    }
-                                                });
-                                            },
-                                            OffValue: false,
-                                            OffCallback: function (val, instance) {
-                                                $scope.contract.unpause({
-                                                    gas: $scope.gasPrice
-                                                }, function (err, unpauseResult) {
-                                                    if (!err && unpauseResult) {
-                                                        $scope.showTransaction(unpauseResult, $scope.ethScanBaseUrl + "/tx/" + unpauseResult);
-                                                    }
-                                                });
-                                            },
-                                            Theme: "Light",
-                                            ToggleState: $scope.paused,
-                                            ConfirmChanges: false
+                                    } else {
+                                        $scope.contract.paused.call((error, resultPaused) => {
+                                            $scope.paused = resultPaused;
                                         });
                                     }
+        
+                                    $scope.contract.allEvents({ fromBlock: 0, toBlock: "latest" }).get((error, results) => {
+                                        if (!error) {
+                                            var relaventEvents = _.filter(results, function (e) { return e.event === "onTokenPurchase" || e.event === "onTokenSell" || e.event === "Transfer"; });
+                
+                                            $scope.processEvents(relaventEvents).then(function (processedEvents) {
+                                                var addressDataArr = [];
+                                                angular.forEach(processedEvents, function (e, k) {
+                                                    if ($scope.shouldAddAddress(e.from, addressDataArr)) {
+                                                        addressDataArr.push({
+                                                            address: e.from,
+                                                            tokenBalance: null,
+                                                            dividendBalance: null
+                                                        });
+                                                    }
+                                                    if ($scope.shouldAddAddress(e.to, addressDataArr)) {
+                                                        addressDataArr.push({
+                                                            address: e.to,
+                                                            tokenBalance: null,
+                                                            dividendBalance: null
+                                                        });
+                                                    }
+                                                });
+                
+                                                $scope.recentActivity = _.orderBy(processedEvents, [(o) => +o.timestamp], ["desc"]);
+                                                $scope.processAccounts(addressDataArr).then(function (accounts) {
+                                                    $scope.leaderboardData = _.orderBy(accounts, [(o) => +o.tokenBalance], ["desc"]);
+                                                    var rank = 0;
+                                                    angular.forEach($scope.leaderboardData, function (a, k) {
+                                                        rank++;
+                                                        a.rank = rank;
+                                                    });
+                                                });
+                                            });
+                                        }
+        
+                                        // Current price
+                                        $scope.contract.currentPrice.call((error, wei) => {
+                                            $scope.currentPrice = web3.toDecimal(wei);
+                                            $scope.currentPriceEth = web3.toDecimal(web3.fromWei(wei, "ether"));
+        
+                                            // Balance
+                                            $scope.contract.balanceOf($scope.defaultAccount, (error, resultBalance) => {
+                                                var tokens = web3.toDecimal(resultBalance);
+                                                $scope.tokenBalance = tokens;
+
+                                                if (tokens > 0) {
+                                                    $scope.sellTokenCount = tokens;
+                                                    $scope.transferTokenCount = tokens;
+                                                } else {
+                                                    $scope.sellTokenCount = null;
+                                                    $scope.transferTokenCount = null;
+                                                }
+        
+                                                // Pool info
+                                                $scope.contract.getPoolInfo.call((error, result) => {
+                                                    $scope.poolTotal = web3.toDecimal(web3.fromWei(result[0], "ether"));
+                                                    $scope.poolFloor = web3.toDecimal(web3.fromWei(result[1], "ether"));
+                                                    $scope.poolCeiling = web3.toDecimal(web3.fromWei(result[2], "ether"));
+                                                    $scope.totalDividends = web3.toDecimal(web3.fromWei(result[3], "ether"));
+                                                    $scope.sellAllowed = result[4];
+                                                    $scope.contractEthValue = web3.toDecimal(web3.fromWei(result[5], "ether"));
+                                                    $scope.buyReferrerPercent = web3.toDecimal(result[6]);
+                                                    $scope.buyHolderPercent = web3.toDecimal(result[7]);
+                                                    $scope.sellHolderPercent = web3.toDecimal(result[8]);
+                                                    $scope.totalDividendsClaimed = web3.fromWei(result[11], "ether").toString(10);
+                                                    $scope.dividendsUnclaimed = web3.fromWei(result[12], "ether").toString(10);
+                                                    $scope.dividendsUnclaimedNum = parseFloat(web3.fromWei(result[12], "ether"));
+    
+                                                    if($scope.poolCeiling < 0) {
+                                                        $scope.pctToCeiling = ($scope.poolTotal / $scope.poolCeiling * 100).toFixed(2);
+                                                    } else {
+                                                        if($scope.poolTotal > 0) {
+                                                            $scope.pctToCeiling = 100;
+                                                        } else {
+                                                            $scope.pctToCeiling = 0;
+                                                        }
+                                                    }
+    
+                                                    if (!$scope.sellAllowed) {
+                                                        $scope.sellTokenCount = null;
+                                                    }
+        
+                                                    if ($scope.sellAllowed && $scope.tokenBalance > 0) {
+                                                        $scope.recalculateSellEstimate();
+                                                    }
+
+                                                    // Dividends
+                                                    $scope.contract.dividendBalanceOf($scope.defaultAccount, (error, wei) => {
+                                                        $scope.dividendBalanceNumber = web3.toDecimal(web3.fromWei(wei, "ether"));
+                                                        $scope.dividendBalance = web3.fromWei(wei, "ether").toString(10);
+
+                                                        // Paused
+                                                        $scope.contract.paused.call((error, result) => {
+                                                            $scope.paused = result;
+        
+                                                            // Finished
+                                                            if (!$scope.eventsSubscribed) {
+                                                                $scope.wireUpEvents();
+                                                            }
+        
+                                                            $scope.loading = false;
+        
+                                                            $scope.recalculateBuyEstimate();
+                                                            $scope.gettingData = false;
+                                                            deferred.resolve(true);
+                                                        });
+                                                    });
+                                                });
+                                            });
+                                        });
+                                    });
                                 });
                             });
-                        } else {
-                            $scope.contract.paused.call((error, resultPaused) => {
-                                $scope.paused = resultPaused;
-                            });
-                        }
-                    });
-
-                    $scope.leaderboardData = [];
-                    $scope.recentActivity = [];
-
-                    var refParam = $location.search().ref;
-                    if($scope.referrerAddress) {
-                        if($scope.referrerAddress !== "0x0") {
-                            if($scope.referrerAddress.toUpperCase() === $scope.defaultAccount.toUpperCase()) {
-                                $scope.referrerAddress = "0x0";
-                            }
-                        }
-                    } else if(refParam) {
-                        $scope.referrerAddress = refParam;
+                        });
                     } else {
-                        $scope.referrerAddress = "0x0";
+                        $scope.gettingData = false;
+                        deferred.resolve(true);
                     }
 
-                    $scope.contract.allEvents({ fromBlock: 0, toBlock: "latest" }).get((error, results) => {
-                        if (!error) {
-                            var relaventEvents = _.filter(results, function (e) { return e.event === "onTokenPurchase" || e.event === "onTokenSell" || e.event === "Transfer"; });
+                    return deferred.promise;
+                };
 
-                            $scope.processEvents(relaventEvents).then(function (processedEvents) {
-                                var addressDataArr = [];
-                                angular.forEach(processedEvents, function (e, k) {
-                                    if ($scope.shouldAddAddress(e.from, addressDataArr)) {
-                                        addressDataArr.push({
-                                            address: e.from,
-                                            tokenBalance: null,
-                                            dividendBalance: null
-                                        });
-                                    }
-                                    if ($scope.shouldAddAddress(e.to, addressDataArr)) {
-                                        addressDataArr.push({
-                                            address: e.to,
-                                            tokenBalance: null,
-                                            dividendBalance: null
-                                        });
-                                    }
-                                });
+                $window.contractLoaded = false;
+                $scope.accounts = [];
 
-                                $scope.recentActivity = _.orderBy(processedEvents, [(o) => +o.timestamp], ["desc"]);
-                                $scope.processAccounts(addressDataArr).then(function (accounts) {
-                                    $scope.leaderboardData = _.orderBy(accounts, [(o) => +o.tokenBalance], ["desc"]);
-                                    var rank = 0;
-                                    angular.forEach($scope.leaderboardData, function (a, k) {
-                                        rank++;
-                                        a.rank = rank;
-                                    });
-                                });
-                            });
-                        }
-                    });
+                $scope.setContract = function() {
+                    $scope.hasWeb3 = true;
+                    $window.ethereum.autoRefreshOnNetworkChange = false;
+                    $scope.defaultAccount = $scope.accounts[0];
+                    $scope.loadingMetamask = false;
 
-                    // Current price
-                    $scope.contract.currentPrice.call((error, wei) => {
-                        $scope.$apply(function () {
-                            $scope.currentPrice = web3.toDecimal(wei);
-                            $scope.currentPriceEth = web3.toDecimal(web3.fromWei(wei, "ether"));
+                    $http.get("abi.json").then(function (res) {
+                        $scope.contract = web3.eth.contract(res.data).at($scope.contractAddress);
+                        $scope.refreshStats().then(function(updated){
+                            if(updated) {
+                                $rootScope.safeApply();
+                            }
                         });
-
-                        // Balance
-                        $scope.contract.balanceOf($scope.defaultAccount, (error, result) => {
-                            var tokens = web3.toDecimal(result);
-                            $scope.$apply(function () {
-                                $scope.tokenBalance = tokens;
-
-                                if (tokens > 0) {
-                                    $scope.sellTokenCount = tokens;
-                                    $scope.transferTokenCount = tokens;
-                                } else {
-                                    $scope.sellTokenCount = null;
-                                    $scope.transferTokenCount = null;
-                                }
-                            });
-
-                            // Pool info
-                            $scope.contract.getPoolInfo.call((error, result) => {
-                                $scope.$apply(function () {
-                                    $scope.poolTotal = web3.toDecimal(web3.fromWei(result[0], "ether"));
-                                    $scope.poolFloor = web3.toDecimal(web3.fromWei(result[1], "ether"));
-                                    $scope.poolCeiling = web3.toDecimal(web3.fromWei(result[2], "ether"));
-                                    $scope.totalDividends = web3.toDecimal(web3.fromWei(result[3], "ether"));
-                                    $scope.sellAllowed = result[4];
-                                    $scope.contractEthValue = web3.toDecimal(web3.fromWei(result[5], "ether"));
-                                    $scope.buyReferrerPercent = web3.toDecimal(result[6]);
-                                    $scope.buyHolderPercent = web3.toDecimal(result[7]);
-                                    $scope.sellHolderPercent = web3.toDecimal(result[8]);
-                                    $scope.totalDividendsClaimed = web3.fromWei(result[11], "ether").toString(10);
-                                    $scope.dividendsUnclaimed = web3.fromWei(result[12], "ether").toString(10);
-                                    $scope.dividendsUnclaimedNum = parseFloat(web3.fromWei(result[12], "ether"));
-
-                                    if($scope.poolCeiling < 0) {
-                                        $scope.pctToCeiling = ($scope.poolTotal / $scope.poolCeiling * 100).toFixed(2);
-                                    } else {
-                                        if($scope.poolTotal > 0) {
-                                            $scope.pctToCeiling = 100;
-                                        } else {
-                                            $scope.pctToCeiling = 0;
-                                        }
-                                    }
-
-                                    if (!$scope.sellAllowed) {
-                                        $scope.sellTokenCount = null;
-                                    }
-                                });
-
-                                if ($scope.sellAllowed && $scope.tokenBalance > 0) {
-                                    $scope.recalculateSellEstimate();
-                                }
-
-                                $scope.recalculateBuyEstimate();
-
-                                // Dividends
-                                $scope.contract.dividendBalanceOf($scope.defaultAccount, (error, wei) => {
-                                    $scope.$apply(function () {
-                                        $scope.dividendBalanceNumber = web3.toDecimal(web3.fromWei(wei, "ether"));
-                                        $scope.dividendBalance = $scope.dividendBalanceNumber.toString(10);
-                                    });
-
-                                    // Paused
-                                    $scope.contract.paused.call((error, result) => {
-                                        $scope.$apply(function () {
-                                            $scope.paused = result;
-                                        });
-
-                                        // Finished
-                                        if (!$scope.eventsSubscribed) {
-                                            $scope.wireUpEvents();
-                                        }
-
-                                        $scope.loading = false;
-                                    });
-                                });
-                            });
-                        });
+                        $window.contractLoaded = true;
                     });
                 };
 
                 $scope.load = function () {
-                    $scope.loading = true;
-                    if (typeof $window.ethereum !== "undefined" || typeof $window.web3 !== "undefined") {
-                        web3.version.getNetwork((err, netId) => {
-                            $scope.currentNetwork = netId;
-                        });
-
-                        $scope.loadingMetamask = true;
-                        $window.ethereum.enable().then(function (accounts) {
-                            $scope.hasWeb3 = true;
-                            $window.ethereum.autoRefreshOnNetworkChange = false;
-                            $scope.defaultAccount = accounts[0];
+                    if(!$scope.loading) {
+                        $scope.loading = true;
+                        if (typeof $window.ethereum !== "undefined" || typeof $window.web3 !== "undefined") {
+                            web3.version.getNetwork((err, netId) => {
+                                $scope.currentNetwork = netId;
+                            });
+    
+                            $scope.loadingMetamask = true;
+                            $window.ethereum.enable().then(function (accounts) {
+                                $scope.accounts = accounts;
+                                $scope.setContract();
+                            }).catch(function (reason) {
+                                console.info(reason);
+                                $scope.loadingMetamask = false;
+                                console.log(reason === "User rejected provider access");
+                            });
+                        } else {
                             $scope.loadingMetamask = false;
-
-                            $http.get("abi.json")
-                                .then(function (res) {
-                                    $scope.contract = web3.eth.contract(res.data).at($scope.contractAddress);
-                                    $scope.refreshStats();
-                                });
-                        }).catch(function (reason) {
-                            console.info(reason);
-                            $scope.loadingMetamask = false;
-                            console.log(reason === "User rejected provider access");
-                        });
-                    } else {
-                        $scope.loadingMetamask = false;
-                        $scope.error = "You need a web3 browser or install MetaMask to use this page.";
-                        $scope.showInstallMetaMask = true;
+                            $scope.error = "You need a web3 browser or install MetaMask to use this page.";
+                            $scope.showInstallMetaMask = true;
+                        }
                     }
                 };
                 $scope.load();

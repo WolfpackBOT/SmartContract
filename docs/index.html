@@ -33,14 +33,19 @@
     <link href="https://fonts.googleapis.com/css?family=Montserrat:100i,200,300,400,700,800,900" rel="stylesheet" />
 </head>
 <body ng-cloak ng-controller="tokenController">
+    <div id="imgLoader" style="position:fixed;top:50%;left:50%;" ng-show="gettingData">
+        <img id="imgLoader" src="images/ajax-loader.gif" />
+    </div>
     <div class="container" style="padding-top:3em;">
-        <div class="view" style="min-height:30em;" ng-controller="tokenController">
+        <div class="view" style="min-height:30em;">
             <div class="mainMenuContent">
                 <div class="mainPageTitleContainer">
                     <div class="row">
                         <div class="col-md-12"><h1><span>{{tokenSymbol}}</span>&nbsp;<img src="images/EvolV_32.png?v=1" alt="EvolV" /></h1></div>
                     </div>
                 </div>
+
+                <div style="margin: 1em"><a href="" data-toggle="modal" data-target="#md-whatIsEvolV">What is EvolV?</a></div>
         
                 <div id="mainPageBody" class="mainPageBody" style="visibility:hidden;">
                     <div class="row" ng-show="paused">
@@ -67,7 +72,7 @@
                         <div ng-show="loadingMetamask">
                             Loading Metamask...
                         </div>
-                        <div ng-show="hasWeb3" class="token-form">
+                        <div ng-show="hasWeb3" class="token-form" ng-cloak>
                             <div style="max-width:50em;margin-right:auto;margin-left:auto;background-color:#191919;padding: 1em;">
                                 <div class="row">
                                     <div class="col-md-12" style="text-align:center;">
@@ -567,6 +572,37 @@
             </div>
         </div>
     </div>
+
+    <div id="md-whatIsEvolV" class="modal theme-modal" tabindex="-1" role="dialog">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">What is EvolV?</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body" style="padding-top:10px;">
+                        <p>
+                            <a style="color: #007bff;" href="EvolV_WhitePaper_ANN.pdf" target="_blank"><i class="fa fa-download" style="color:#000;"></i>&nbsp;&nbsp; WhitePaper</span></a>
+                        </p>
+                        <p>EvolV is an ERC-20 token and smart contract equipped with a built-in decentralized exchange, which
+                                handles buying and selling of the token. The EvolV Ecosystem includes built-in referral dividends and
+                                volume based staking dividends for all token holders, along with use cases that give the EvolV token
+                                true utility.</p>
+                        <p>The EvolV Ecosystem is built around the concept of volume backed basic income, paid in Ethereum to
+                                all EvolV holders.</p>
+                        <p>It's a complex system, but it's all managed by an immutable smart contract.</p>
+                        <p>You will receive an immediate 5% Ethereum dividend anytime EvolV is purchased using your unique
+                                referral link.</p>
+                        <p>Every time EvolV is purchased, you receive an Ethereum dividend. </p>
+                        <p>Every time EvolV is sold, you receive an Ethereum dividend.</p>
+                        <p>Ethereum in, Ethereum out.  Easy as pie.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js"></script>
@@ -581,8 +617,8 @@
     <script src="js/dependencies/btnSwitch/jquery.btnswitch.js"></script>
     <script src="js/dependencies/polyfill.min.js"></script>
     <script src="js/dependencies/web3.min.js"></script>
-    <script src="js/app.js?v=20191006_0708"></script>
-    <script src="js/tokenController.js?v=20191018_1136"></script>
+    <script src="js/app.js?v=20191023_1021"></script>
+    <script src="js/tokenController.js?v=20191023_1021"></script>
     <script src="js/tokenTransactionDialogController.js"></script>
 </body>
 </html>
