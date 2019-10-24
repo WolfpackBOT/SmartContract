@@ -59,6 +59,7 @@
                 $scope.eventsSubscribed = false;
                 $scope.addressData = [];
                 $scope.recentActivity = [];
+                $scope.myReferrals = [];
                 $scope.ethScanBaseUrl = websiteSettings.environment === "production" ? "https://etherscan.io" : "https://ropsten.etherscan.io";
                 $scope.expectedNetwork = websiteSettings.environment === "production" ? "1" : "3";
                 $scope.expectedNetworkName = websiteSettings.environment === "production" ? "Main Ethereum Network" : "Ropsten Test Network";
@@ -149,19 +150,21 @@
                 };
 
                 $scope.recalculateBuyEstimate = function () {
-                    var wei = web3.toDecimal(web3.toWei($scope.buyEthAmount));
-                    if (wei > $scope.currentPrice) {
-                        $scope.contract.estimateBuy(wei, (error, result) => {
-                            $rootScope.safeApply(function () {
-                                $scope.validBuyAmount = true;
-                                $scope.buyPriceTokensPerEth = '' + web3.toDecimal(result[0]);
+                    if(!isNaN($scope.buyEthAmount)) {
+                        var wei = web3.toDecimal(web3.toWei($scope.buyEthAmount));
+                        if (wei > $scope.currentPrice) {
+                            $scope.contract.estimateBuy(wei, (error, result) => {
+                                $rootScope.safeApply(function () {
+                                    $scope.validBuyAmount = true;
+                                    $scope.buyPriceTokensPerEth = '' + web3.toDecimal(result[0]);
+                                });
                             });
-                        });
-                    } else {
-                        $rootScope.safeApply(function () {
-                            $scope.validBuyAmount = false;
-                            $scope.buyPriceTokensPerEth = "0";
-                        });
+                        } else {
+                            $rootScope.safeApply(function () {
+                                $scope.validBuyAmount = false;
+                                $scope.buyPriceTokensPerEth = "0";
+                            });
+                        }
                     }
                 };
 
@@ -362,13 +365,16 @@
 
                     var i = 0;
                     var rtnEvents = [];
-                    angular.forEach(events, function (value, key) {
-                        i++;
+                    angular.forEach(events, function (value) {
                         if (value.event === "onTokenPurchase") {
                             value.eventType = "buy";
                             value.from = $scope.contractAddress;
                             value.to = value.args.customerAddress;
                             value.amount = parseInt(value.args.tokensMinted, 10);
+
+                            if(value.args.referredBy === $scope.defaultAccount) {
+                                $scope.myReferrals.push(value);
+                            }
                         } else if (value.event === "onTokenSell") {
                             value.eventType = "sell";
                             value.to = $scope.contractAddress;
@@ -380,12 +386,13 @@
                             value.from = value.args.from;
                             value.amount = parseInt(value.args.value, 10);
                         }
-
+                        
                         if (!$scope.isInExclusionList(value.from) && !$scope.isInExclusionList(value.to)) {
                             rtnEvents.push(value);
                         }
-
+                       
                         web3.eth.getBlock(value.blockNumber, (err, block) => {
+                            i++;
                             value.timestamp = block.timestamp;
                             value.date = moment.unix(block.timestamp).format();
 
@@ -487,6 +494,7 @@
                         $scope.gettingData = true;
                         $scope.leaderboardData = [];
                         $scope.recentActivity = [];
+                        $scope.myReferrals = [];
     
                         var refParam = $location.search().ref;
                         if($scope.referrerAddress) {
@@ -602,10 +610,13 @@
                                                         });
                                                     }
                                                 });
-                
-                                                $scope.recentActivity = _.orderBy(processedEvents, [(o) => +o.timestamp], ["desc"]);
+
+                                                var eventDateCutoff = moment().subtract(5, "days").unix();
+                                                var unSortedRecentEvents = _.filter(processedEvents, function(o) { return o.timestamp >= eventDateCutoff; });
+                                                $scope.recentActivity = _.orderBy(unSortedRecentEvents, [(o) => +o.timestamp], ["desc"]);
+
                                                 $scope.processAccounts(addressDataArr).then(function (accounts) {
-                                                    $scope.leaderboardData = _.orderBy(accounts, [(o) => +o.tokenBalance], ["desc"]);
+                                                    $scope.leaderboardData = _.chain(accounts).sortBy((a) => -a.tokenBalance).take(25).value();
                                                     var rank = 0;
                                                     angular.forEach($scope.leaderboardData, function (a, k) {
                                                         rank++;
