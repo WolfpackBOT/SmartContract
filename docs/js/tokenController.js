@@ -514,11 +514,12 @@
                         $scope.balanced = resp[13];
 
                         var _poolTotalNum = web3.toDecimal(resp[0]);
+                        var _totalInContractNum = web3.toDecimal(resp[5]);
                         var _dividendsUnclaimedNum = web3.toDecimal(resp[12]);
                         $scope.contract.getPoolBalanceInfo.call((error, resp) => {
                             $scope.overdrawPool = web3.fromWei(resp[5], "ether").toString(10);
                             $scope.totalOverdrawn = web3.fromWei(resp[6], "ether").toString(10);
-                            $scope.currentlyUnderfunded = web3.fromWei(_poolTotalNum - _dividendsUnclaimedNum, "ether").toString(10);
+                            $scope.currentlyUnderfunded = web3.fromWei(_totalInContractNum - _poolTotalNum - _dividendsUnclaimedNum, "ether").toString(10);
                         });
                     });
                 };
