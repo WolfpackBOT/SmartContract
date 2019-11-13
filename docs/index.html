@@ -19,7 +19,7 @@
     <meta name="author" content="WolfpackBOT" />
     <title>EvolV Smart Contract User Interface</title>
     <meta property="og:type" content="website" />
-    <meta property="og:title" content="WolfpackBOT" />
+    <meta property="og:title" content="EvolV token user interface" />
     <meta property="og:image" content="images/token.png?v=1" />
     <meta property="og:url" content="https://wolfpackbot.github.io/SmartContract/" />
     <meta property="og:description" content="EvolV token user interface" />
@@ -47,7 +47,13 @@
                     </div>
                 </div>
 
-                <div style="margin: 1em"><a href="" data-toggle="modal" data-target="#md-whatIsEvolV">What is EvolV?</a></div>
+                <div style="margin: 1em">
+                    <span style="color:#424242;">&bull;</span>
+                    <a href="" data-toggle="modal" data-target="#md-whatIsEvolV">What is EvolV?</a>
+                    &nbsp;&nbsp;
+                    <span style="color:#424242;">&bull;</span>
+                    <a href="https://www.wolfpackbot.com" target="_blank">WolfpackBOT</a>
+                </div>
         
                 <div id="mainPageBody" class="mainPageBody" style="visibility:hidden;">
                     <div class="row" ng-show="paused">
@@ -135,6 +141,13 @@
                                                             <tr>
                                                                 <td>totalOverdrawn</td>
                                                                 <td>{{totalOverdrawn}}</td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td>Currently underfunded</td>
+                                                                <td>
+                                                                    <span ng-show="currentlyUnderfunded >= 0" class="badge badge-success" style="font-size:8pt;">No</span>
+                                                                    <span ng-show="currentlyUnderfunded < 0" class="badge badge-danger" style="font-size:8pt;">{{currentlyUnderfunded}}</span>
+                                                                </td>
                                                             </tr>
                                                         </tbody>
                                                     </table>
@@ -323,25 +336,28 @@
                                             </div>
         
                                             <div style="margin-bottom:1em;">
-                                                <small ng-show="sellAllowed && tokenBalance === 0">
+                                                <small ng-show="sellAllowed && !cooldownEngaged && tokenBalance === 0">
                                                     No tokens to sell
                                                 </small>
                                                 <small ng-show="!sellAllowed">
                                                     Not allowed yet
                                                 </small>
-                                                <small ng-show="sellAllowed && tokenBalance > 0 && sellTokenCount <= tokenBalance && (contractEthValue >= sellTokensEthNum + dividendsUnclaimedNum && sellTokensEthNum < poolTotal)">
+                                                <small ng-show="sellAllowed && !cooldownEngaged && tokenBalance > 0 && sellTokenCount <= tokenBalance && (contractEthValue >= sellTokensEthNum + dividendsUnclaimedNum && sellTokensEthNum < poolTotal)">
                                                     Estimated {{sellTokensEth}} ETH from sell
                                                 </small>
-                                                <small ng-show="sellAllowed && tokenBalance > 0 && sellTokenCount <= tokenBalance && (contractEthValue < sellTokensEthNum + dividendsUnclaimedNum || sellTokensEthNum > poolTotal)">
+                                                <small ng-show="sellAllowed && !cooldownEngaged && tokenBalance > 0 && sellTokenCount <= tokenBalance && (contractEthValue < sellTokensEthNum + dividendsUnclaimedNum || sellTokensEthNum > poolTotal)">
                                                     {{sellTokensEth}} ETH exceeds pool total!
                                                 </small>
                                                 <small ng-show="sellTokenCount > tokenBalance">
                                                     Cannot sell more than you have!
                                                 </small>
+                                                <small ng-show="sellAllowed && cooldownEngaged">
+                                                    Function disabled for 24 hours
+                                                </small>
                                             </div>
 
                                             <div style="margin-top: 1em;">
-                                                <button type="button" class="btn btn-primary btn-block" ng-click="sellTokens()" ng-disabled="!sellAllowed || !validSellAmount || paused || (contractEthValue < sellTokensEthNum + dividendsUnclaimedNum || sellTokensEthNum > poolTotal) || sellTokenCount > tokenBalance">Sell</button>
+                                                <button type="button" class="btn btn-primary btn-block" ng-click="sellTokens()" ng-disabled="cooldownEngaged || !sellAllowed || !validSellAmount || paused || (contractEthValue < sellTokensEthNum + dividendsUnclaimedNum || sellTokensEthNum > poolTotal) || sellTokenCount > tokenBalance">Sell</button>
                                             </div>
                                         </div>
                                     </div>
@@ -372,8 +388,11 @@
                                     <div class="col-md-6" style="text-align:center;">
                                         <h4>Actions</h4>
                                         <div style="margin-top:1em;">
-                                            <button type="button" class="btn btn-default btn-block" ng-disabled="dividendBalanceNumber === 0 || paused" ng-click="claimDividends()">Claim dividends</button>
-                                            <button type="button" class="btn btn-default btn-block" ng-disabled="dividendBalanceNumber === 0 || dividendBalanceNumber < currentPriceEth || paused" ng-click="reinvestDividends()">Reinvest dividends</button>
+                                            <button type="button" class="btn btn-default btn-block" ng-disabled="cooldownEngaged || dividendBalanceNumber === 0 || paused" ng-click="claimDividends()">Claim dividends</button>
+                                            <small ng-show="dividendBalanceNumber > 0 && !paused && cooldownEngaged" style="margin:1em 0;">
+                                                Function disabled for 24 hours
+                                            </small>
+                                            <button style="margin-top:5px;" type="button" class="btn btn-default btn-block" ng-disabled="dividendBalanceNumber === 0 || dividendBalanceNumber < currentPriceEth || paused" ng-click="reinvestDividends()">Reinvest dividends</button>
                                         </div>
                                     </div>
                                 </div>
@@ -402,7 +421,7 @@
                                                 </div>
                                             </div>
         
-                                            <button type="button" class="btn btn-info btn-block" style="margin-top: 5px;" ng-disabled="transferTokenCount === 0 || !transferTokenAddress || paused" ng-click="transfer()">Transfer</button>
+                                            <button type="button" class="btn btn-info btn-block" style="margin-top: 5px;" ng-disabled="cooldownEngaged || transferTokenCount === 0 || !transferTokenAddress || paused" ng-click="transfer()">Transfer</button>
         
                                             <small ng-show="tokenBalance === 0">No tokens to transfer</small>
                                         </div>
@@ -651,8 +670,8 @@
     <script src="js/dependencies/btnSwitch/jquery.btnswitch.js"></script>
     <script src="js/dependencies/polyfill.min.js"></script>
     <script src="js/dependencies/web3.min.js"></script>
-    <script src="js/app.js?v=20191023_1021"></script>
-    <script src="js/tokenController.js?v=20191024_1052"></script>
+    <script src="js/app.js?v=20191113_1026"></script>
+    <script src="js/tokenController.js?v=20191113_1112"></script>
     <script src="js/tokenTransactionDialogController.js"></script>
 </body>
 </html>

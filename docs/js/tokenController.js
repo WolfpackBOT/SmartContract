@@ -4,8 +4,8 @@
     var app = angular.module("app");
 
     app.controller("tokenController",
-        ["$rootScope", "$scope", "$q", "$timeout", "$interval", "$http", "$window", "$uibModal", "$location", "websiteSettings",
-            function ($rootScope, $scope, $q, $timeout, $interval, $http, $window, $uibModal, $location, websiteSettings) {
+        ["$rootScope", "$scope", "$q", "$timeout", "$interval", "$http", "$window", "$uibModal", "$location", "$cookies", "websiteSettings",
+            function ($rootScope, $scope, $q, $timeout, $interval, $http, $window, $uibModal, $location, $cookies, websiteSettings) {
                 var refParam = $location.search().ref;
                 if(refParam) {
                     $scope.referrerAddress = refParam;
@@ -95,6 +95,9 @@
                 $scope.setInitialPrice_val = null;
                 $scope.balanceOf_val = null;
                 $scope.balanceOf_result = null;
+                $scope.cooldownMsg = "Please wait 24 hours before attempting this function.";
+                $scope.cookieKey = "evolv";
+                $scope.cooldownEngaged = false;
 
                 $scope.leaderboardExclusions = ["0xD1D9Dad7FC00A933678eEf64b3CaC3a3AF0a5AB4", "0xE242CeF45608826216f7cA2d548c48562b50CdD0", "0x7B5973D4F41Af6bA50e2feD457d7c91D5A33349C", "0x54168F68D51a86DEdA3D5EA14A3E45bE74EFfbd4", "0x6102dB8E1d47D359CafF9ADa4f0b0a8378d35109", "0xaBE5EE06B246e23d69ffb44F6d5996686b69ce3b", "0xe3D3544FB9F48E69C7097bD8f9044125726Ba56f", "0xEEc987D5593d564CC34230993299B5Fc76E890ce", "0x362A25c145b99599e609C52c88a7D2B7E302836e", "0x2B88eCD4Ac56F2AaB0D8F80a495242BceB00590F", "0x1C405E8Dc3cD252A57e76a30aa2d98a6f3490E74", "0x6eaFCe4CCa99f8f81f73a626020e317283cA638f", "0x411c7D0909a55Ae50C3D299eB55d0baB74Fa9feD"];
 
@@ -236,26 +239,51 @@
                     });
                 };
 
+                $scope.setCooldown = function() {
+                    $scope.cooldownEngaged = true;
+                    $cookies.put($scope.cookieKey,"cooldown", {
+                        expires: moment().add(24, "hours").toDate()
+                      });
+                };
+
+                $scope.checkCooldown = function() {
+                    $scope.cooldownEngaged = $cookies.get($scope.cookieKey) === "cooldown";
+                };
+
+                $interval(function() {
+                    $scope.checkCooldown();
+                }, 1000);
+                
                 $scope.sellTokens = function () {
-                    $scope.contract.sell(parseInt($scope.sellTokenCount, 10), {
-                        gas: $scope.gasPrice
-                    }, function (err, result) {
-                        if (!err && result) {
-                            $scope.resetInputs();
-                            $scope.showTransaction(result, $scope.ethScanBaseUrl + "/tx/" + result);
-                        }
-                    });
+                    if(!$scope.cooldownEngaged) {
+                        $scope.contract.sell(parseInt($scope.sellTokenCount, 10), {
+                            gas: $scope.gasPrice
+                        }, function (err, result) {
+                            if (!err && result) {
+                                $scope.setCooldown();
+                                $scope.resetInputs();
+                                $scope.showTransaction(result, $scope.ethScanBaseUrl + "/tx/" + result);
+                            }
+                        });
+                    } else {
+                        alert($scope.cooldownMsg);
+                    }
                 };
 
                 $scope.claimDividends = function () {
-                    $scope.contract.claimDividend({
-                        gas: $scope.gasPrice
-                    }, function (err, result) {
-                        if (!err && result) {
-                            $scope.resetInputs();
-                            $scope.showTransaction(result, $scope.ethScanBaseUrl + "/tx/" + result);
-                        }
-                    });
+                    if(!$scope.cooldownEngaged) {
+                        $scope.contract.claimDividend({
+                            gas: $scope.gasPrice
+                        }, function (err, result) {
+                            if (!err && result) {
+                                $scope.setCooldown();
+                                $scope.resetInputs();
+                                $scope.showTransaction(result, $scope.ethScanBaseUrl + "/tx/" + result);
+                            }
+                        });
+                    } else {
+                        alert($scope.cooldownMsg);
+                    }
                 };
 
                 $scope.reinvestDividends = function () {
@@ -270,14 +298,19 @@
                 };
 
                 $scope.transfer = function () {
-                    $scope.contract.transfer($scope.transferTokenAddress, parseInt($scope.transferTokenCount, 10), {
-                        gas: $scope.gasPrice
-                    }, function (err, result) {
-                        if (!err && result) {
-                            $scope.resetInputs();
-                            $scope.showTransaction(result, $scope.ethScanBaseUrl + "/tx/" + result);
-                        }
-                    });
+                    if(!$scope.cooldownEngaged) {
+                        $scope.contract.transfer($scope.transferTokenAddress, parseInt($scope.transferTokenCount, 10), {
+                            gas: $scope.gasPrice
+                        }, function (err, result) {
+                            if (!err && result) {
+                                $scope.setCooldown();
+                                $scope.resetInputs();
+                                $scope.showTransaction(result, $scope.ethScanBaseUrl + "/tx/" + result);
+                            }
+                        });
+                    } else {
+                        alert($scope.cooldownMsg);
+                    }
                 };
 
                 $scope.setInitialPrice = function () {
@@ -479,11 +512,14 @@
                         $scope.dividendsUnclaimed = web3.fromWei(resp[12], "ether").toString(10);
                         $scope.dividendsUnclaimedNum = parseFloat(web3.fromWei(resp[12], "ether"));
                         $scope.balanced = resp[13];
-                    });
 
-                    $scope.contract.getPoolBalanceInfo.call((error, resp) => {
-                        $scope.overdrawPool = web3.fromWei(resp[5], "ether").toString(10);
-                        $scope.totalOverdrawn = web3.fromWei(resp[6], "ether").toString(10);
+                        var _poolTotalNum = web3.toDecimal(resp[0]);
+                        var _dividendsUnclaimedNum = web3.toDecimal(resp[12]);
+                        $scope.contract.getPoolBalanceInfo.call((error, resp) => {
+                            $scope.overdrawPool = web3.fromWei(resp[5], "ether").toString(10);
+                            $scope.totalOverdrawn = web3.fromWei(resp[6], "ether").toString(10);
+                            $scope.currentlyUnderfunded = web3.fromWei(_poolTotalNum - _dividendsUnclaimedNum, "ether").toString(10);
+                        });
                     });
                 };
 

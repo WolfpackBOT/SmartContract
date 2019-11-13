@@ -1,4 +1,4 @@
-var app = angular.module("app", ["ui.bootstrap", "ui.toggle"]);
+var app = angular.module("app", ["ngCookies", "ui.bootstrap", "ui.toggle"]);
 
 app.config(["$provide", "$locationProvider",
     function ($provide, $locationProvider) {
