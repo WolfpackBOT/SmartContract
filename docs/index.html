@@ -30,7 +30,7 @@
     <link href="js/dependencies/angularDialog/dialogs.min.css" rel="stylesheet" />
     <link href="js/dependencies/angular-bootstrap-toggle/angular-bootstrap-toggle.min.css" rel="stylesheet" />
     <link href="js/dependencies/btnSwitch/jquery.btnswitch.min.css" rel="stylesheet" />
-    <link href="css/styles.css?v=001" rel="stylesheet" />
+    <link href="css/styles.css?v=20191204_0711" rel="stylesheet" />
     <link href="https://fonts.googleapis.com/css?family=Muli:300,400,700" rel="stylesheet" />
     <link href="https://fonts.googleapis.com/css?family=Montserrat:100i,200,300,400,700,800,900" rel="stylesheet" />
 </head>
@@ -47,615 +47,632 @@
                     </div>
                 </div>
 
-                <div style="margin: 1em">
-                    <span style="color:#424242;">&bull;</span>
-                    <a href="" data-toggle="modal" data-target="#md-whatIsEvolV">What is EvolV?</a>
-                    &nbsp;&nbsp;
-                    <span style="color:#424242;">&bull;</span>
-                    <a href="https://www.wolfpackbot.com" target="_blank">WolfpackBOT</a>
-                </div>
-        
-                <div id="mainPageBody" class="mainPageBody" style="visibility:hidden;">
-                    <div class="row" ng-show="paused">
-                        <div class="col-md-12">
-                            <div class="alert alert-danger">Paused</div>
-                        </div>
-                    </div>
-        
-                    <div style="margin-top:1em;" data-ng-hide="message == ''" data-ng-class="(savedSuccessfully) ? 'alert alert-success' : 'alert alert-danger'">
-                        {{message}}
-                    </div>
-        
-                    <div style="margin-top:1em;" ng-show="error" class="alert alert-danger">
-                        {{error}}
-                    </div>
-        
-                    <div ng-show="showInstallMetaMask" style="width:20em;">
-                        <a href="https://metamask.io/" target="_blank" border="0">
-                            <img class="img-fluid" src="images/installMetaMask.png" alt="Install MetaMask" />
-                        </a>
-                    </div>
-        
-                    <div ng-show="currentNetwork && currentNetwork === expectedNetwork">
-                        <div ng-show="loadingMetamask">
-                            Loading Metamask...
-                        </div>
-                        <div ng-show="hasWeb3" class="token-form" ng-cloak>
-                            <div style="max-width:50em;margin-right:auto;margin-left:auto;background-color:#191919;padding: 1em;">
-                                <div class="row">
-                                    <div class="col-md-12" style="text-align:center;">
-                                        <h4>Referral Link</h4>
-                                    </div>
-                                </div>
-                                <div class="row">
-                                    <div class="col-md-12">
-                                        <div class="input-group input-group-sm mb-3">
-                                            <div class="input-group-prepend">
-                                                <span class="input-group-text">
-                                                    <i class="fas fa-copy" ng-click="copyReferral()" style="cursor:pointer;"></i>
-                                                </span>
-                                            </div>
-                                            <input id="referralUrl" type="text" class="form-control" value="{{baseUrl}}?ref={{defaultAccount}}" readonly style="background-color: #191919;color: #cecece;" />
-                                        </div>
-                                    </div>
-                                </div>
-                                <hr style="margin: 1em 0;border-bottom: 1px solid #2f2f2f;" />
-                                <div ng-show="isBoardMember" id="TokenBoardSettingsContainer">
-                                    <div class="row">
-                                        <div class="col-md-12" style="text-align:center;">
-                                            <h4>Board Member</h4>
-                                        </div>
-                                    </div>
-                                    <div class="row" style="margin-top:5px;">
-                                        <div class="col-md-12">
-                                            <fieldset>
-                                                <legend>Approval</legend>
-                                                <div id="boardMemberApproval" class="switch" data-state="{{boardMemberApproved}}"></div>
-                                                <div style="margin-top:1em;">
-                                                    <b>Contract Board Status</b><br />
-                                                    <span ng-show="contractBoardStatusApproved" class="badge badge-success" style="font-size:8pt;">Board Approved ({{contractBoardStatusApprovedCount}} / {{totalBoardMembers}})</span>
-                                                    <span ng-show="!contractBoardStatusApproved" class="badge badge-danger" style="font-size:8pt;">Board Not Approved ({{contractBoardStatusApprovedCount}} / {{totalBoardMembers}})</span>
-                                                </div>
-                                                <div style="margin-top:1em;">
-                                                    <span ng-show="balanced" class="badge badge-success" style="font-size:8pt;">Balanced</span>
-                                                    <span ng-show="!balanced" class="badge badge-danger" style="font-size:8pt;">Not balanced!</span>
-                                                    <br />
-                                                    <table class="table table-dark table-sm">
-                                                        <tbody>
-                                                            <tr>
-                                                                <td>totalDividends</td>
-                                                                <td>{{totalDividends}}</td>
-                                                            </tr>
-                                                            <tr>
-                                                                <td>totalDividendsClaimed</td>
-                                                                <td>{{totalDividendsClaimed}}</td>
-                                                            </tr>
-                                                            <tr>
-                                                                <td>dividendsUnclaimed</td>
-                                                                <td>{{dividendsUnclaimed}}</td>
-                                                            </tr>
-                                                            <tr>
-                                                                <td>overdrawPool</td>
-                                                                <td>{{overdrawPool}}</td>
-                                                            </tr>
-                                                            <tr>
-                                                                <td>totalOverdrawn</td>
-                                                                <td>{{totalOverdrawn}}</td>
-                                                            </tr>
-                                                            <tr>
-                                                                <td>Currently underfunded</td>
-                                                                <td>
-                                                                    <span ng-show="currentlyUnderfunded >= 0" class="badge badge-success" style="font-size:8pt;">No</span>
-                                                                    <span ng-show="currentlyUnderfunded < 0" class="badge badge-danger" style="font-size:8pt;">{{currentlyUnderfunded}}</span>
-                                                                </td>
-                                                            </tr>
-                                                        </tbody>
-                                                    </table>
-                                                </div>
-                                            </fieldset>
-                                            <fieldset>
-                                                <legend>Board Members</legend>
-                                                <div class="row">
-                                                    <div class="col-md-4">
-                                                        <b>setMinBoardMemberApprovalsForAction</b><br />
-                                                        <input type="text" ng-model="setMinBoardMemberApprovalsForAction_val" ng-disabled="!contractBoardStatusApproved" class="form-control-sm" />
-                                                        <button type="button" class="btn btn-default btn-sm" ng-click="executeContractCommand1('setMinBoardMemberApprovalsForAction', setMinBoardMemberApprovalsForAction_val)" ng-disabled="!contractBoardStatusApproved || !setMinBoardMemberApprovalsForAction_val">Execute</button>
-                                                    </div>
-                                                    <div class="col-md-4">
-                                                        <b>addBoardMember</b><br />
-                                                        <input type="text" ng-model="addBoardMember_val" ng-disabled="!contractBoardStatusApproved" placeholder="address" class="form-control-sm" />
-                                                        <input type="text" ng-model="setMinBoardMemberApprovalsForAction_val" ng-disabled="!contractBoardStatusApproved" placeholder="min approvals" class="form-control-sm" />
-                                                        <button type="button" class="btn btn-default btn-sm" ng-click="executeContractCommand2('addBoardMember', addBoardMember_val, setMinBoardMemberApprovalsForAction_val)" ng-disabled="!contractBoardStatusApproved || !removeBoardMember_val || !setMinBoardMemberApprovalsForAction_val">Execute</button>
-                                                    </div>
-                                                    <div class="col-md-4">
-                                                        <b>removeBoardMember</b><br />
-                                                        <input type="text" ng-model="removeBoardMember_val" ng-disabled="!contractBoardStatusApproved" placeholder="address" class="form-control-sm" />
-                                                        <input type="text" ng-model="setMinBoardMemberApprovalsForAction_val" ng-disabled="!contractBoardStatusApproved" placeholder="min approvals" class="form-control-sm" />
-                                                        <button type="button" class="btn btn-default btn-sm" ng-click="executeContractCommand2('removeBoardMember', removeBoardMember_val, setMinBoardMemberApprovalsForAction_val)" ng-disabled="!contractBoardStatusApproved || !removeBoardMember_val || !setMinBoardMemberApprovalsForAction_val">Execute</button>
-                                                    </div>
-                                                </div>
-                                            </fieldset>
-                                            <fieldset>
-                                                <legend>Freeze/Unfreeze Address</legend>
-                                                <div class="row">
-                                                    <div class="col-md-4">
-                                                        <b>freezeAddress</b><br />
-                                                        <input type="text" ng-model="freezeAddress_val" ng-disabled="!contractBoardStatusApproved" placeholder="address" class="form-control-sm" />
-                                                        <button type="button" class="btn btn-default btn-sm" ng-click="executeContractCommand1('freezeAddress', freezeAddress_val)" ng-disabled="!contractBoardStatusApproved || !freezeAddress_val">Execute</button>
-                                                    </div>
-                                                    <div class="col-md-4">
-                                                        <b>unfreezeAddress</b><br />
-                                                        <input type="text" ng-model="unfreezeAddress_val" ng-disabled="!contractBoardStatusApproved" placeholder="address" class="form-control-sm" />
-                                                        <button type="button" class="btn btn-default btn-sm" ng-click="executeContractCommand1('unfreezeAddress', unfreezeAddress_val)" ng-disabled="!contractBoardStatusApproved || !unfreezeAddress_val">Execute</button>
-                                                    </div>
-                                                    <div class="col-md-4">
-                                                        <b>balanceOf</b><br />
-                                                        <input type="text" ng-model="balanceOf_val" placeholder="address" class="form-control-sm" />
-                                                        <button type="button" class="btn btn-default btn-sm" ng-click="getBalance()">Execute</button>
-                                                        <span ng-show="balanceOf_result">{{balanceOf_result}}</span>
-                                                    </div>
-                                                </div>
-                                            </fieldset>
-                                            <fieldset>
-                                                <legend>Contract settings</legend>
-                                                <div class="row">
-                                                    <div class="col-md-4">
-                                                        <b>mint</b><br />
-                                                        <input type="text" style="text-align: center;" ng-model="mint_val" ng-disabled="!contractBoardStatusApproved" class="form-control-sm" />
-                                                        <button type="button" class="btn btn-default btn-sm" ng-click="executeContractCommand1('mint', mint_val)" ng-disabled="!contractBoardStatusApproved || !mint_val">Execute</button>
-                                                    </div>
-                                                    <div class="col-md-4">
-                                                        <b>burn</b><br />
-                                                        <input type="text" style="text-align: center;" ng-model="burn_val" ng-disabled="!contractBoardStatusApproved" class="form-control-sm" />
-                                                        <button type="button" class="btn btn-default btn-sm" ng-click="executeContractCommand1('burn', burn_val)" ng-disabled="!contractBoardStatusApproved || !burn_val">Execute</button>
-                                                    </div>
-                                                    <div class=col-md-4>
-                                                        <b>setInitialPrice</b><br />
-                                                        <input type="text" ng-model="setInitialPrice_val" class="form-control-sm" />
-                                                        <button type="button" class="btn btn-default btn-sm" ng-click="setInitialPrice()" ng-disabled="!setInitialPrice_val">Execute</button>
-                                                    </div>
-                                                </div>
-                                                <div class="row">
-                                                    <div class="col-md-4">
-                                                        <b>setName</b><br />
-                                                        <input type="text" ng-model="setName_val" ng-disabled="!contractBoardStatusApproved" class="form-control-sm" />
-                                                        <button type="button" class="btn btn-default btn-sm" ng-click="executeContractCommand1('setName', setName_val)" ng-disabled="!contractBoardStatusApproved || !setName_val">Execute</button>
-                                                    </div>
-                                                    <div class="col-md-4">
-                                                        <b>setSymbol</b><br />
-                                                        <input type="text" ng-model="setSymbol_val" ng-disabled="!contractBoardStatusApproved" class="form-control-sm" />
-                                                        <button type="button" class="btn btn-default btn-sm" ng-click="executeContractCommand1('setSymbol', setSymbol_val)" ng-disabled="!contractBoardStatusApproved || !setSymbol_val">Execute</button>
-                                                    </div>
-                                                    <div class="col-md-4">
-                                                        <b>setIncrement</b><br />
-                                                        <input type="text" ng-model="setIncrement_val" ng-disabled="!contractBoardStatusApproved" class="form-control-sm" />
-                                                        <button type="button" class="btn btn-default btn-sm" ng-click="executeContractCommand1('setIncrement', setIncrement_val)" ng-disabled="!contractBoardStatusApproved || !setIncrement_val">Execute</button>
-                                                    </div>
-                                                </div>
-                                                <div class="row">
-                                                    <div class="col-md-4">
-                                                        <b>setLowerCap</b><br />
-                                                        <input type="text" ng-model="setLowerCap_val" ng-disabled="!contractBoardStatusApproved" class="form-control-sm" />
-                                                        <button type="button" class="btn btn-default btn-sm" ng-click="executeContractCommand1('setLowerCap', setLowerCap_val)" ng-disabled="!contractBoardStatusApproved || !setLowerCap_val">Execute</button>
-                                                    </div>
-                                                    <div class="col-md-4">
-                                                        <b>setMinimumEthSellAmount</b><br />
-                                                        <input type="text" ng-model="setMinimumEthSellAmount_val" ng-disabled="!contractBoardStatusApproved" class="form-control-sm" />
-                                                        <button type="button" class="btn btn-default btn-sm" ng-click="executeContractCommand1('setMinimumEthSellAmount', setMinimumEthSellAmount_val)" ng-disabled="!contractBoardStatusApproved || !setMinimumEthSellAmount_val">Execute</button>
-                                                    </div>
-                                                    <div class="col-md-4">
-                                                        <b>Pause</b><br />
-                                                        <div id="pause" class="switch" data-state="{{paused}}"></div>
-                                                    </div>
-                                                </div>
-                                            </fieldset>
-                                            <fieldset>
-                                                <legend>Pool</legend>
-                                                <div class="row">
-                                                    <div class="col-md-4">
-                                                        <b>setPoolFloor</b><br />
-                                                        <input type="text" ng-model="setPoolFloor_val" ng-disabled="!contractBoardStatusApproved" class="form-control-sm" />
-                                                        <button type="button" class="btn btn-default btn-sm" ng-click="executeContractCommand1('setPoolFloor', setPoolFloor_val)" ng-disabled="!contractBoardStatusApproved || !setPoolFloor_val">Execute</button>
-                                                    </div>
-                                                    <div class="col-md-4">
-                                                        <b>setPoolCeiling</b><br />
-                                                        <input type="text" ng-model="setPoolCeiling_val" ng-disabled="!contractBoardStatusApproved" class="form-control-sm" />
-                                                        <button type="button" class="btn btn-default btn-sm" ng-click="executeContractCommand1('setPoolCeiling', setPoolCeiling_val)" ng-disabled="!contractBoardStatusApproved || !setPoolCeiling_val">Execute</button>
-                                                    </div>
-                                                    <div class="col-md-4">
-                                                        <b>setPoolBuyReferrerPercent</b><br />
-                                                        <input type="text" ng-model="setPoolBuyReferrerPercent_val" ng-disabled="!contractBoardStatusApproved" class="form-control-sm" />
-                                                        <button type="button" class="btn btn-default btn-sm" ng-click="executeContractCommand1('setPoolBuyReferrerPercent', setPoolBuyReferrerPercent_val)" ng-disabled="!contractBoardStatusApproved || !setPoolBuyReferrerPercent_val">Execute</button>
-                                                    </div>
-                                                </div>
-                                                <div class="row">
-                                                    <div class="col-md-4">
-                                                        <b>setPoolBuyHolderPercent</b><br />
-                                                        <input type="text" ng-model="setPoolBuyHolderPercent_val" ng-disabled="!contractBoardStatusApproved" class="form-control-sm" />
-                                                        <button type="button" class="btn btn-default btn-sm" ng-click="executeContractCommand1('setPoolBuyHolderPercent', setPoolBuyHolderPercent_val)" ng-disabled="!contractBoardStatusApproved || !setPoolBuyHolderPercent_val">Execute</button>
-                                                    </div>
-                                                    <div class="col-md-4">
-                                                        <b>setPoolSellHolderPercent</b><br />
-                                                        <input type="text" ng-model="setPoolSellHolderPercent_val" ng-disabled="!contractBoardStatusApproved" class="form-control-sm" />
-                                                        <button type="button" class="btn btn-default btn-sm" ng-click="executeContractCommand1('setPoolSellHolderPercent', setPoolSellHolderPercent_val)" ng-disabled="!contractBoardStatusApproved || !setPoolSellHolderPercent_val">Execute</button>
-                                                    </div>
-                                                    <div class="col-md-4">
-                                                        <b>setPoolBuyMintOwnerPercent</b><br />
-                                                        <input type="text" ng-model="setPoolBuyMintOwnerPercent_val" ng-disabled="!contractBoardStatusApproved" class="form-control-sm" />
-                                                        <button type="button" class="btn btn-default btn-sm" ng-click="executeContractCommand1('setPoolBuyMintOwnerPercent', setPoolBuyMintOwnerPercent_val)" ng-disabled="!contractBoardStatusApproved || !setPoolBuyMintOwnerPercent_val">Execute</button>
-                                                    </div>
-                                                </div>
-                                                <div class="row">
-                                                    <div class="col-md-4">
-                                                        <b>setPoolSellHoldOwnerPercent</b><br />
-                                                        <input type="text" ng-model="setPoolSellHoldOwnerPercent_val" ng-disabled="!contractBoardStatusApproved" class="form-control-sm" />
-                                                        <button type="button" class="btn btn-default btn-sm" ng-click="executeContractCommand1('setPoolSellHoldOwnerPercent', setPoolSellHoldOwnerPercent_val)" ng-disabled="!contractBoardStatusApproved || !setPoolSellHoldOwnerPercent_val">Execute</button>
-                                                    </div>
-                                                    <div class="col-md-4">
-                                                        <b>fundOverdrawPool</b><br />
-                                                        <input type="text" ng-model="fundOverdrawPool_val" class="form-control-sm" />
-                                                        <button type="button" class="btn btn-default btn-sm" ng-click="fundOverdrawPool()">Execute</button>
-                                                    </div>
-                                                </div>
-                                            </fieldset>
-                                        </div>
-                                    </div>
-                                    <hr style="margin: 1em 0;border-bottom: 1px solid #2f2f2f;" />
-                                </div>
-        
-                                <div class="row">
-                                    <div class="col-md-6" style="border-right: 1px solid #2f2f2f;">
-                                        <div style="max-width: 16em;margin-left:auto;margin-right:auto;">
-                                            <h4>Buy</h4>
-                                            <div class="input-group">
-                                                <input type="text" class="form-control" style="text-align: center;" ng-model="buyEthAmount" ng-change="recalculateBuyEstimate()" ng-model-options="{debounce: 500}" />
-                                                <div class="input-group-append">
-                                                    <span class="input-group-text" id="basic-addon2">ETH</span>
-                                                </div>
-                                            </div>
-        
-                                            <div style="margin-bottom:1em;" ng-hide="!validBuyAmount">
-                                                <small>
-                                                    Estimated {{buyPriceTokensPerEth}} tokens with {{buyEthAmount}} ETH
-                                                </small>
-                                            </div>
-        
-                                            <div style="margin-top: 1em;">
-                                                <button type="button" class="btn btn-primary btn-block" ng-click="buyTokens()" ng-disabled="!currentPrice || !validBuyAmount || paused">Buy</button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div style="max-width:16em;margin-left:auto;margin-right:auto;">
-                                            <h4>Sell</h4>
-                                            <div class="input-group">
-                                                <input ng-disabled="!sellAllowed" type="text" class="form-control" style="text-align: center;" ng-model="sellTokenCount" ng-change="recalculateSellEstimate()" ng-model-options="{debounce: 500}" />
-                                                <div class="input-group-append">
-                                                    <span class="input-group-text" id="basic-addon2">EvolV</span>
-                                                </div>
-                                            </div>
-        
-                                            <div style="margin-bottom:1em;">
-                                                <small ng-show="sellAllowed && !cooldownEngaged && tokenBalance === 0">
-                                                    No tokens to sell
-                                                </small>
-                                                <small ng-show="!sellAllowed">
-                                                    Not allowed yet
-                                                </small>
-                                                <small ng-show="sellAllowed && !cooldownEngaged && tokenBalance > 0 && sellTokenCount <= tokenBalance && (contractEthValue >= sellTokensEthNum + dividendsUnclaimedNum && sellTokensEthNum < poolTotal)">
-                                                    Estimated {{sellTokensEth}} ETH from sell
-                                                </small>
-                                                <small ng-show="sellAllowed && !cooldownEngaged && tokenBalance > 0 && sellTokenCount <= tokenBalance && (contractEthValue < sellTokensEthNum + dividendsUnclaimedNum || sellTokensEthNum > poolTotal)">
-                                                    {{sellTokensEth}} ETH exceeds pool total!
-                                                </small>
-                                                <small ng-show="sellTokenCount > tokenBalance">
-                                                    Cannot sell more than you have!
-                                                </small>
-                                                <small ng-show="sellAllowed && cooldownEngaged">
-                                                    Function disabled for 24 hours
-                                                </small>
-                                            </div>
+                <ul class="nav nav-tabs">
+                    <li class="nav-item">
+                        <a class="nav-link active" data-toggle="tab" href="#main">Token Interface</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-toggle="tab" href="#moreInfo">More Information</a>
+                    </li>
+                </ul>
 
-                                            <div style="margin-top: 1em;">
-                                                <button type="button" class="btn btn-primary btn-block" ng-click="sellTokens()" ng-disabled="cooldownEngaged || !sellAllowed || !validSellAmount || paused || (contractEthValue < sellTokensEthNum + dividendsUnclaimedNum || sellTokensEthNum > poolTotal) || sellTokenCount > tokenBalance">Sell</button>
-                                            </div>
-                                        </div>
-                                    </div>
+                <div class="tab-content">
+                    <div id="main" class="container tab-pane active"><br>
+                        <div id="mainPageBody" class="mainPageBody" style="visibility:hidden;">
+                            <div class="row" ng-show="paused">
+                                <div class="col-md-12">
+                                    <div class="alert alert-danger">Paused</div>
                                 </div>
-                                <hr style="margin: 1em 0;border-bottom: 1px solid #2f2f2f;" />
-                                <div class="row" style="margin-top:1.5em;">
-                                    <div class="col-md-6" style="text-align:center;border-right: 1px solid #2f2f2f;">
-                                        <h4>My Wallet</h4>
-                                        <div>
-                                            <p style="margin:0;margin-top:5px;height:52px;">
-                                                Address<br />
-                                                <a title="{{defaultAccount}}" href="{{ethScanBaseUrl}}/address/{{defaultAccount}}" target="_blank">{{defaultAccount | smallAddress:10}}</a>
-                                            </p>
-                                            <p style="margin:0;margin-top:5px;height:52px;" ng-show="referrerAddress && referrerAddress !== '0x0'">
-                                                Referrer<br />
-                                                <a title="{{referrerAddress}}" href="{{ethScanBaseUrl}}/address/{{referrerAddress}}" target="_blank">{{referrerAddress | smallAddress:10}}</a>
-                                            </p>
-                                            <p style="margin:0;margin-top:5px;height:52px;">
-                                                Tokens<br />
-                                                <span class="badge badge-success" style="font-size:1.2em;">{{tokenBalance}}</span>
-                                            </p>
-                                            <p style="margin-top:5px;height:52px;">
-                                                Dividends<br />
-                                                <span class="badge badge-info" style="font-size:1.2em;">{{dividendBalance}}</span>
-                                            </p>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6" style="text-align:center;">
-                                        <h4>Actions</h4>
-                                        <div style="margin-top:1em;">
-                                            <button type="button" class="btn btn-default btn-block" ng-disabled="cooldownEngaged || dividendBalanceNumber === 0 || paused" ng-click="claimDividends()">Claim dividends</button>
-                                            <small ng-show="dividendBalanceNumber > 0 && !paused && cooldownEngaged" style="margin:1em 0;">
-                                                Function disabled for 24 hours
-                                            </small>
-                                            <button style="margin-top:5px;" type="button" class="btn btn-default btn-block" ng-disabled="dividendBalanceNumber === 0 || dividendBalanceNumber < currentPriceEth || paused" ng-click="reinvestDividends()">Reinvest dividends</button>
-                                        </div>
-                                    </div>
-                                </div>
+                            </div>
         
-                                <hr style="margin: 1em 0;border-bottom: 1px solid #2f2f2f;" />
-                                <div class="row">
-                                    <div class="col-md-12" style="text-align:center;">
-                                        <h4>Transfer</h4>
-                                        <small>Dividends are automatically claimed by your account during buys, sells, or transfers so they are not lost.</small>
-                                    </div>
+                            <div class="row" ng-show="isFrozen">
+                                <div class="col-md-12">
+                                    <div class="alert alert-danger">Your account is currently frozen.</div>
                                 </div>
-                                <div class="row" style="margin-top:5px;">
-                                    <div class="col-md-12" style="text-align:center;">
-                                        <div style="margin-left:auto;margin-right:auto;max-width: 30em;">
-                                            <div class="input-group">
-                                                <input ng-disabled="tokenBalance === 0" type="text" class="form-control" style="text-align: center;" ng-model="transferTokenCount" />
-                                                <div class="input-group-append">
-                                                    <span class="input-group-text" id="basic-addon2" style="width:5em;">EvolV</span>
-                                                </div>
-                                            </div>
-        
-                                            <div class="input-group" style="margin-top: 5px;">
-                                                <input ng-disabled="tokenBalance === 0" type="text" class="form-control" ng-model="transferTokenAddress" />
-                                                <div class="input-group-append">
-                                                    <span class="input-group-text" id="basic-addon2" style="width:5em;">Address</span>
-                                                </div>
-                                            </div>
-        
-                                            <button type="button" class="btn btn-info btn-block" style="margin-top: 5px;" ng-disabled="cooldownEngaged || transferTokenCount === 0 || !transferTokenAddress || paused" ng-click="transfer()">Transfer</button>
-        
-                                            <small ng-show="tokenBalance === 0">No tokens to transfer</small>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <hr style="margin: 1em 0;border-bottom: 1px solid #2f2f2f;" />
-                                <div class="row">
-                                    <div class="col-md-12" style="text-align:center;">
-                                        <h4>Burn</h4>
-                                    </div>
-                                </div>
-                                <div class="row" style="margin-top:5px;">
-                                    <div class="col-md-12" style="text-align:center;">
-                                        <div style="margin-left:auto;margin-right:auto;max-width: 30em;">
-                                            <div class="input-group">
-                                                <input ng-disabled="tokenBalance === 0" type="text" class="form-control" style="text-align: center;" ng-model="burnTokenCount" />
-                                                <div class="input-group-append">
-                                                    <span class="input-group-text" id="basic-addon2">EvolV&nbsp;&nbsp;</span>
-                                                </div>
-                                            </div>
+                            </div>
                 
-                                            <button type="button" class="btn btn-info btn-block" style="margin-top: 5px;" ng-disabled="shouldDisableBurn()" ng-click="burn()">Burn</button>
+                            <div style="margin-top:1em;" data-ng-hide="message == ''" data-ng-class="(savedSuccessfully) ? 'alert alert-success' : 'alert alert-danger'">
+                                {{message}}
+                            </div>
+                
+                            <div style="margin-top:1em;" ng-show="error" class="alert alert-danger">
+                                {{error}}
+                            </div>
+                
+                            <div ng-show="showInstallMetaMask" style="width:20em;">
+                                <a href="https://metamask.io/" target="_blank" border="0">
+                                    <img class="img-fluid" src="images/installMetaMask.png" alt="Install MetaMask" />
+                                </a>
+                            </div>
+                
+                            <div ng-show="currentNetwork && currentNetwork === expectedNetwork">
+                                <div ng-show="loadingMetamask">
+                                    Loading Metamask...
+                                </div>
+                                <div ng-show="hasWeb3" class="token-form" ng-cloak>
+                                    <div style="max-width:50em;margin-right:auto;margin-left:auto;background-color:#191919;padding: 1em;">
+                                        <div class="row">
+                                            <div class="col-md-12" style="text-align:center;">
+                                                <h4>Referral Link</h4>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-12">
+                                                <div class="input-group input-group-sm mb-3">
+                                                    <div class="input-group-prepend">
+                                                        <span class="input-group-text">
+                                                            <i class="fas fa-copy" ng-click="copyReferral()" style="cursor:pointer;"></i>
+                                                        </span>
+                                                    </div>
+                                                    <input id="referralUrl" type="text" class="form-control" value="{{baseUrl}}?ref={{defaultAccount}}" readonly style="background-color: #191919;color: #cecece;" />
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <hr style="margin: 1em 0;border-bottom: 1px solid #2f2f2f;" />
+                                        <div ng-show="isBoardMember" id="TokenBoardSettingsContainer">
+                                            <div class="row">
+                                                <div class="col-md-12" style="text-align:center;">
+                                                    <h4>Board Member</h4>
+                                                </div>
+                                            </div>
+                                            <div class="row" style="margin-top:5px;">
+                                                <div class="col-md-12">
+                                                    <fieldset>
+                                                        <legend>Approval</legend>
+                                                        <div id="boardMemberApproval" class="switch" data-state="{{boardMemberApproved}}"></div>
+                                                        <div style="margin-top:1em;">
+                                                            <b>Contract Board Status</b><br />
+                                                            <span ng-show="contractBoardStatusApproved" class="badge badge-success" style="font-size:8pt;">Board Approved ({{contractBoardStatusApprovedCount}} / {{totalBoardMembers}})</span>
+                                                            <span ng-show="!contractBoardStatusApproved" class="badge badge-danger" style="font-size:8pt;">Board Not Approved ({{contractBoardStatusApprovedCount}} / {{totalBoardMembers}})</span>
+                                                        </div>
+                                                        <div style="margin-top:1em;">
+                                                            <span ng-show="balanced" class="badge badge-success" style="font-size:8pt;">Balanced</span>
+                                                            <span ng-show="!balanced" class="badge badge-danger" style="font-size:8pt;">Not balanced!</span>
+                                                            <br />
+                                                            <table class="table table-dark table-sm">
+                                                                <tbody>
+                                                                    <tr>
+                                                                        <td>totalDividends</td>
+                                                                        <td>{{totalDividends}}</td>
+                                                                    </tr>
+                                                                    <tr>
+                                                                        <td>totalDividendsClaimed</td>
+                                                                        <td>{{totalDividendsClaimed}}</td>
+                                                                    </tr>
+                                                                    <tr>
+                                                                        <td>dividendsUnclaimed</td>
+                                                                        <td>{{dividendsUnclaimed}}</td>
+                                                                    </tr>
+                                                                    <tr>
+                                                                        <td>overdrawPool</td>
+                                                                        <td>{{overdrawPool}}</td>
+                                                                    </tr>
+                                                                    <tr>
+                                                                        <td>totalOverdrawn</td>
+                                                                        <td>{{totalOverdrawn}}</td>
+                                                                    </tr>
+                                                                    <tr>
+                                                                        <td>Currently underfunded</td>
+                                                                        <td>
+                                                                            <span ng-show="currentlyUnderfunded >= 0" class="badge badge-success" style="font-size:8pt;">No</span>
+                                                                            <span ng-show="currentlyUnderfunded < 0" class="badge badge-danger" style="font-size:8pt;">{{currentlyUnderfunded}}</span>
+                                                                        </td>
+                                                                    </tr>
+                                                                </tbody>
+                                                            </table>
+                                                        </div>
+                                                    </fieldset>
+                                                    <fieldset>
+                                                        <legend>Board Members</legend>
+                                                        <div class="row">
+                                                            <div class="col-md-4">
+                                                                <b>setMinBoardMemberApprovalsForAction</b><br />
+                                                                <input type="text" ng-model="setMinBoardMemberApprovalsForAction_val" ng-disabled="!contractBoardStatusApproved" class="form-control-sm" />
+                                                                <button type="button" class="btn btn-default btn-sm" ng-click="executeContractCommand1('setMinBoardMemberApprovalsForAction', setMinBoardMemberApprovalsForAction_val)" ng-disabled="!contractBoardStatusApproved || !setMinBoardMemberApprovalsForAction_val">Execute</button>
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <b>addBoardMember</b><br />
+                                                                <input type="text" ng-model="addBoardMember_val" ng-disabled="!contractBoardStatusApproved" placeholder="address" class="form-control-sm" />
+                                                                <input type="text" ng-model="setMinBoardMemberApprovalsForAction_val" ng-disabled="!contractBoardStatusApproved" placeholder="min approvals" class="form-control-sm" />
+                                                                <button type="button" class="btn btn-default btn-sm" ng-click="executeContractCommand2('addBoardMember', addBoardMember_val, setMinBoardMemberApprovalsForAction_val)" ng-disabled="!contractBoardStatusApproved || !removeBoardMember_val || !setMinBoardMemberApprovalsForAction_val">Execute</button>
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <b>removeBoardMember</b><br />
+                                                                <input type="text" ng-model="removeBoardMember_val" ng-disabled="!contractBoardStatusApproved" placeholder="address" class="form-control-sm" />
+                                                                <input type="text" ng-model="setMinBoardMemberApprovalsForAction_val" ng-disabled="!contractBoardStatusApproved" placeholder="min approvals" class="form-control-sm" />
+                                                                <button type="button" class="btn btn-default btn-sm" ng-click="executeContractCommand2('removeBoardMember', removeBoardMember_val, setMinBoardMemberApprovalsForAction_val)" ng-disabled="!contractBoardStatusApproved || !removeBoardMember_val || !setMinBoardMemberApprovalsForAction_val">Execute</button>
+                                                            </div>
+                                                        </div>
+                                                    </fieldset>
+                                                    <fieldset>
+                                                        <legend>Freeze/Unfreeze Address</legend>
+                                                        <div class="row">
+                                                            <div class="col-md-4">
+                                                                <b>freezeAddress</b><br />
+                                                                <input type="text" ng-model="freezeAddress_val" ng-disabled="!contractBoardStatusApproved" placeholder="address" class="form-control-sm" />
+                                                                <button type="button" class="btn btn-default btn-sm" ng-click="executeContractCommand1('freezeAddress', freezeAddress_val)" ng-disabled="!contractBoardStatusApproved || !freezeAddress_val">Execute</button>
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <b>unfreezeAddress</b><br />
+                                                                <input type="text" ng-model="unfreezeAddress_val" ng-disabled="!contractBoardStatusApproved" placeholder="address" class="form-control-sm" />
+                                                                <button type="button" class="btn btn-default btn-sm" ng-click="executeContractCommand1('unfreezeAddress', unfreezeAddress_val)" ng-disabled="!contractBoardStatusApproved || !unfreezeAddress_val">Execute</button>
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <b>balanceOf</b><br />
+                                                                <input type="text" ng-model="balanceOf_val" placeholder="address" class="form-control-sm" />
+                                                                <button type="button" class="btn btn-default btn-sm" ng-click="getBalance()">Execute</button>
+                                                                <span ng-show="balanceOf_result">{{balanceOf_result}}</span>
+                                                            </div>
+                                                        </div>
+                                                    </fieldset>
+                                                    <fieldset>
+                                                        <legend>Contract settings</legend>
+                                                        <div class="row">
+                                                            <div class="col-md-4">
+                                                                <b>mint</b><br />
+                                                                <input type="text" style="text-align: center;" ng-model="mint_val" ng-disabled="!contractBoardStatusApproved" class="form-control-sm" />
+                                                                <button type="button" class="btn btn-default btn-sm" ng-click="executeContractCommand1('mint', mint_val)" ng-disabled="!contractBoardStatusApproved || !mint_val">Execute</button>
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <b>burn</b><br />
+                                                                <input type="text" style="text-align: center;" ng-model="burn_val" class="form-control-sm" />
+                                                                <button type="button" class="btn btn-default btn-sm" ng-click="executeContractCommand1('burn', burn_val)" ng-disabled="!burn_val">Execute</button>
+                                                            </div>
+                                                            <div class=col-md-4>
+                                                                <b>setInitialPrice</b><br />
+                                                                <input type="text" ng-model="setInitialPrice_val" class="form-control-sm" />
+                                                                <button type="button" class="btn btn-default btn-sm" ng-click="setInitialPrice()" ng-disabled="!setInitialPrice_val">Execute</button>
+                                                            </div>
+                                                        </div>
+                                                        <div class="row">
+                                                            <div class="col-md-4">
+                                                                <b>setName</b><br />
+                                                                <input type="text" ng-model="setName_val" ng-disabled="!contractBoardStatusApproved" class="form-control-sm" />
+                                                                <button type="button" class="btn btn-default btn-sm" ng-click="executeContractCommand1('setName', setName_val)" ng-disabled="!contractBoardStatusApproved || !setName_val">Execute</button>
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <b>setSymbol</b><br />
+                                                                <input type="text" ng-model="setSymbol_val" ng-disabled="!contractBoardStatusApproved" class="form-control-sm" />
+                                                                <button type="button" class="btn btn-default btn-sm" ng-click="executeContractCommand1('setSymbol', setSymbol_val)" ng-disabled="!contractBoardStatusApproved || !setSymbol_val">Execute</button>
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <b>setIncrement</b><br />
+                                                                <input type="text" ng-model="setIncrement_val" ng-disabled="!contractBoardStatusApproved" class="form-control-sm" />
+                                                                <button type="button" class="btn btn-default btn-sm" ng-click="executeContractCommand1('setIncrement', setIncrement_val)" ng-disabled="!contractBoardStatusApproved || !setIncrement_val">Execute</button>
+                                                            </div>
+                                                        </div>
+                                                        <div class="row">
+                                                            <div class="col-md-4">
+                                                                <b>setLowerCap</b><br />
+                                                                <input type="text" ng-model="setLowerCap_val" ng-disabled="!contractBoardStatusApproved" class="form-control-sm" />
+                                                                <button type="button" class="btn btn-default btn-sm" ng-click="executeContractCommand1('setLowerCap', setLowerCap_val)" ng-disabled="!contractBoardStatusApproved || !setLowerCap_val">Execute</button>
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <b>setMinimumEthSellAmount</b><br />
+                                                                <input type="text" ng-model="setMinimumEthSellAmount_val" ng-disabled="!contractBoardStatusApproved" class="form-control-sm" />
+                                                                <button type="button" class="btn btn-default btn-sm" ng-click="executeContractCommand1('setMinimumEthSellAmount', setMinimumEthSellAmount_val)" ng-disabled="!contractBoardStatusApproved || !setMinimumEthSellAmount_val">Execute</button>
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <b>Pause</b><br />
+                                                                <div id="pause" class="switch" data-state="{{paused}}"></div>
+                                                            </div>
+                                                        </div>
+                                                    </fieldset>
+                                                    <fieldset>
+                                                        <legend>Pool</legend>
+                                                        <div class="row">
+                                                            <div class="col-md-4">
+                                                                <b>setPoolFloor</b><br />
+                                                                <input type="text" ng-model="setPoolFloor_val" ng-disabled="!contractBoardStatusApproved" class="form-control-sm" />
+                                                                <button type="button" class="btn btn-default btn-sm" ng-click="executeContractCommand1('setPoolFloor', setPoolFloor_val)" ng-disabled="!contractBoardStatusApproved || !setPoolFloor_val">Execute</button>
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <b>setPoolCeiling</b><br />
+                                                                <input type="text" ng-model="setPoolCeiling_val" ng-disabled="!contractBoardStatusApproved" class="form-control-sm" />
+                                                                <button type="button" class="btn btn-default btn-sm" ng-click="executeContractCommand1('setPoolCeiling', setPoolCeiling_val)" ng-disabled="!contractBoardStatusApproved || !setPoolCeiling_val">Execute</button>
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <b>setPoolBuyReferrerPercent</b><br />
+                                                                <input type="text" ng-model="setPoolBuyReferrerPercent_val" ng-disabled="!contractBoardStatusApproved" class="form-control-sm" />
+                                                                <button type="button" class="btn btn-default btn-sm" ng-click="executeContractCommand1('setPoolBuyReferrerPercent', setPoolBuyReferrerPercent_val)" ng-disabled="!contractBoardStatusApproved || !setPoolBuyReferrerPercent_val">Execute</button>
+                                                            </div>
+                                                        </div>
+                                                        <div class="row">
+                                                            <div class="col-md-4">
+                                                                <b>setPoolBuyHolderPercent</b><br />
+                                                                <input type="text" ng-model="setPoolBuyHolderPercent_val" ng-disabled="!contractBoardStatusApproved" class="form-control-sm" />
+                                                                <button type="button" class="btn btn-default btn-sm" ng-click="executeContractCommand1('setPoolBuyHolderPercent', setPoolBuyHolderPercent_val)" ng-disabled="!contractBoardStatusApproved || !setPoolBuyHolderPercent_val">Execute</button>
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <b>setPoolSellHolderPercent</b><br />
+                                                                <input type="text" ng-model="setPoolSellHolderPercent_val" ng-disabled="!contractBoardStatusApproved" class="form-control-sm" />
+                                                                <button type="button" class="btn btn-default btn-sm" ng-click="executeContractCommand1('setPoolSellHolderPercent', setPoolSellHolderPercent_val)" ng-disabled="!contractBoardStatusApproved || !setPoolSellHolderPercent_val">Execute</button>
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <b>setPoolBuyMintOwnerPercent</b><br />
+                                                                <input type="text" ng-model="setPoolBuyMintOwnerPercent_val" ng-disabled="!contractBoardStatusApproved" class="form-control-sm" />
+                                                                <button type="button" class="btn btn-default btn-sm" ng-click="executeContractCommand1('setPoolBuyMintOwnerPercent', setPoolBuyMintOwnerPercent_val)" ng-disabled="!contractBoardStatusApproved || !setPoolBuyMintOwnerPercent_val">Execute</button>
+                                                            </div>
+                                                        </div>
+                                                        <div class="row">
+                                                            <div class="col-md-4">
+                                                                <b>setPoolSellHoldOwnerPercent</b><br />
+                                                                <input type="text" ng-model="setPoolSellHoldOwnerPercent_val" ng-disabled="!contractBoardStatusApproved" class="form-control-sm" />
+                                                                <button type="button" class="btn btn-default btn-sm" ng-click="executeContractCommand1('setPoolSellHoldOwnerPercent', setPoolSellHoldOwnerPercent_val)" ng-disabled="!contractBoardStatusApproved || !setPoolSellHoldOwnerPercent_val">Execute</button>
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <b>fundOverdrawPool</b><br />
+                                                                <input type="text" ng-model="fundOverdrawPool_val" class="form-control-sm" />
+                                                                <button type="button" class="btn btn-default btn-sm" ng-click="fundOverdrawPool()">Execute</button>
+                                                            </div>
+                                                        </div>
+                                                    </fieldset>
+                                                </div>
+                                            </div>
+                                            <hr style="margin: 1em 0;border-bottom: 1px solid #2f2f2f;" />
+                                        </div>
+                
+                                        <div class="row">
+                                            <div class="col-md-6" style="border-right: 1px solid #2f2f2f;">
+                                                <div style="max-width: 16em;margin-left:auto;margin-right:auto;">
+                                                    <h4>Buy</h4>
+                                                    <div class="input-group">
+                                                        <input type="text" class="form-control" style="text-align: center;" ng-model="buyEthAmount" ng-change="recalculateBuyEstimate()" ng-model-options="{debounce: 500}" />
+                                                        <div class="input-group-append">
+                                                            <span class="input-group-text" id="basic-addon2">ETH</span>
+                                                        </div>
+                                                    </div>
+                
+                                                    <div style="margin-bottom:1em;" ng-hide="!validBuyAmount">
+                                                        <small>
+                                                            Estimated {{buyPriceTokensPerEth}} tokens with {{buyEthAmount}} ETH
+                                                        </small>
+                                                    </div>
+                
+                                                    <div style="margin-top: 1em;">
+                                                        <button type="button" class="btn btn-primary btn-block" ng-click="buyTokens()" ng-disabled="!currentPrice || !validBuyAmount || paused || isFrozen">Buy</button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div style="max-width:16em;margin-left:auto;margin-right:auto;">
+                                                    <h4>Sell</h4>
+                                                    <div class="input-group">
+                                                        <input ng-disabled="!sellAllowed" type="text" class="form-control" style="text-align: center;" ng-model="sellTokenCount" ng-change="recalculateSellEstimate()" ng-model-options="{debounce: 500}" />
+                                                        <div class="input-group-append">
+                                                            <span class="input-group-text" id="basic-addon2">EvolV</span>
+                                                        </div>
+                                                    </div>
+                
+                                                    <div style="margin-bottom:1em;">
+                                                        <small ng-show="sellAllowed && !cooldownEngaged && tokenBalance === 0">
+                                                            No tokens to sell
+                                                        </small>
+                                                        <small ng-show="!sellAllowed">
+                                                            Not allowed yet
+                                                        </small>
+                                                        <small ng-show="sellAllowed && !cooldownEngaged && tokenBalance > 0 && sellTokenCount <= tokenBalance && (contractEthValue >= sellTokensEthNum + dividendsUnclaimedNum && sellTokensEthNum < poolTotal)">
+                                                            Estimated {{sellTokensEth}} ETH from sell
+                                                        </small>
+                                                        <small ng-show="sellAllowed && !cooldownEngaged && tokenBalance > 0 && sellTokenCount <= tokenBalance && (contractEthValue < sellTokensEthNum + dividendsUnclaimedNum || sellTokensEthNum > poolTotal)">
+                                                            {{sellTokensEth}} ETH exceeds pool total!
+                                                        </small>
+                                                        <small ng-show="sellTokenCount > tokenBalance">
+                                                            Cannot sell more than you have!
+                                                        </small>
+                                                        <small ng-show="sellAllowed && cooldownEngaged">
+                                                            Function disabled for 24 hours
+                                                        </small>
+                                                    </div>
+        
+                                                    <div style="margin-top: 1em;">
+                                                        <button type="button" class="btn btn-primary btn-block" ng-click="sellTokens()" ng-disabled="cooldownEngaged || isFrozen || !sellAllowed || !validSellAmount || paused || (contractEthValue < sellTokensEthNum + dividendsUnclaimedNum || sellTokensEthNum > poolTotal) || sellTokenCount > tokenBalance">Sell</button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <hr style="margin: 1em 0;border-bottom: 1px solid #2f2f2f;" />
+                                        <div class="row" style="margin-top:1.5em;">
+                                            <div class="col-md-6" style="text-align:center;border-right: 1px solid #2f2f2f;">
+                                                <h4>My Wallet</h4>
+                                                <div>
+                                                    <p style="margin:0;margin-top:5px;height:52px;">
+                                                        Address<br />
+                                                        <a title="{{defaultAccount}}" href="{{ethScanBaseUrl}}/address/{{defaultAccount}}" target="_blank">{{defaultAccount | smallAddress:10}}</a>
+                                                    </p>
+                                                    <p style="margin:0;margin-top:5px;height:52px;" ng-show="referrerAddress && referrerAddress !== '0x0'">
+                                                        Referrer<br />
+                                                        <a title="{{referrerAddress}}" href="{{ethScanBaseUrl}}/address/{{referrerAddress}}" target="_blank">{{referrerAddress | smallAddress:10}}</a>
+                                                    </p>
+                                                    <p style="margin:0;margin-top:5px;height:52px;">
+                                                        Tokens<br />
+                                                        <span class="badge badge-success" style="font-size:1.2em;">{{tokenBalance}}</span>
+                                                    </p>
+                                                    <p style="margin-top:5px;height:52px;">
+                                                        Dividends<br />
+                                                        <span class="badge badge-info" style="font-size:1.2em;">{{dividendBalance}}</span>
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6" style="text-align:center;">
+                                                <h4>Actions</h4>
+                                                <div style="margin-top:1em;">
+                                                    <button type="button" class="btn btn-default btn-block" ng-disabled="dividendBalanceNumber === 0 || paused || isFrozen" ng-click="claimDividends()">Claim dividends</button>
+                                                    <button style="margin-top:5px;" type="button" class="btn btn-default btn-block" ng-disabled="dividendBalanceNumber === 0 || dividendBalanceNumber < currentPriceEth || paused || isFrozen" ng-click="reinvestDividends()">Reinvest dividends</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                
+                                        <hr style="margin: 1em 0;border-bottom: 1px solid #2f2f2f;" />
+                                        <div class="row">
+                                            <div class="col-md-12" style="text-align:center;">
+                                                <h4>Transfer</h4>
+                                                <small>Dividends are automatically claimed by your account during buys, sells, or transfers so they are not lost.</small>
+                                            </div>
+                                        </div>
+                                        <div class="row" style="margin-top:5px;">
+                                            <div class="col-md-12" style="text-align:center;">
+                                                <div style="margin-left:auto;margin-right:auto;max-width: 30em;">
+                                                    <div class="input-group">
+                                                        <input ng-disabled="tokenBalance === 0" type="text" class="form-control" style="text-align: center;" ng-model="transferTokenCount" />
+                                                        <div class="input-group-append">
+                                                            <span class="input-group-text" id="basic-addon2" style="width:5em;">EvolV</span>
+                                                        </div>
+                                                    </div>
+                
+                                                    <div class="input-group" style="margin-top: 5px;">
+                                                        <input ng-disabled="tokenBalance === 0" type="text" class="form-control" ng-model="transferTokenAddress" />
+                                                        <div class="input-group-append">
+                                                            <span class="input-group-text" id="basic-addon2" style="width:5em;">Address</span>
+                                                        </div>
+                                                    </div>
+                
+                                                    <button type="button" class="btn btn-info btn-block" style="margin-top: 5px;" ng-disabled="transferTokenCount === 0 || !transferTokenAddress || paused || isFrozen" ng-click="transfer()">Transfer</button>
+                
+                                                    <small ng-show="tokenBalance === 0">No tokens to transfer</small>
+                                                </div>
+                                            </div>
+                                        </div>
+        
+                                        <div ng-show="shouldShowBurn">
+                                            <hr style="margin: 1em 0;border-bottom: 1px solid #2f2f2f;" />
+                                            <div class="row">
+                                                <div class="col-md-12" style="text-align:center;">
+                                                    <h4>Burn</h4>
+                                                </div>
+                                            </div>
+                                            <div class="row" style="margin-top:5px;">
+                                                <div class="col-md-12" style="text-align:center;">
+                                                    <div style="margin-left:auto;margin-right:auto;max-width: 30em;">
+                                                        <div class="input-group">
+                                                            <input ng-disabled="tokenBalance === 0" type="text" class="form-control" style="text-align: center;" ng-model="burnTokenCount" />
+                                                            <div class="input-group-append">
+                                                                <span class="input-group-text" id="basic-addon2">EvolV&nbsp;&nbsp;</span>
+                                                            </div>
+                                                        </div>
+                            
+                                                        <button type="button" class="btn btn-info btn-block" style="margin-top: 5px;" ng-disabled="isFrozen || shouldDisableBurn()" ng-click="burn()">Burn</button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                                
+                                        <hr style="margin: 1em 0;border-bottom: 1px solid #2f2f2f;" />
+                                        <div class="row">
+                                            <div class="col-md-12" style="text-align:center;">
+                                                <h4>Global</h4>
+                                            </div>
+                                        </div>
+                                        <div class="row" style="margin-top:5px;">
+                                            <div class="col-md-6" style="text-align:center;border-right: 1px solid #2f2f2f;">
+                                                <table class="table2" style="margin-left:auto;margin-right:auto;">
+                                                    <tr>
+                                                        <td>Price</td>
+                                                        <td>{{currentPriceEth}} ETH</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td>Pool Total</td>
+                                                        <td>{{poolTotal.toFixed(8)}} ETH</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td>Pool Floor</td>
+                                                        <td>{{poolFloor}} ETH</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td>Pool Ceiling</td>
+                                                        <td>{{poolCeiling}} ETH</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td>% to ceiling</td>
+                                                        <td>{{pctToCeiling}}%</td>
+                                                    </tr>
+                                                </table>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <table class="table2" style="margin-left:auto;margin-right:auto;">
+                                                    <tr>
+                                                        <td>Contract</td>
+                                                        <td>
+                                                            <small>
+                                                                <a href="{{ethScanBaseUrl}}/address/{{contractAddress}}" target="_blank" title="{{contractAddress}}">{{contractAddress | smallAddress:10}}</a>
+                                                            </small>
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td>Total in contract</td>
+                                                        <td>{{contractEthValue.toFixed(8)}} ETH</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td>Total Dividends</td>
+                                                        <td>{{totalDividends.toFixed(8)}} ETH</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td>Buy Referrer %</td>
+                                                        <td>{{buyReferrerPercent}}%</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td>Buy Token Holder %</td>
+                                                        <td>{{buyHolderPercent}}%</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td>Sell Token Holder %</td>
+                                                        <td>{{sellHolderPercent}}%</td>
+                                                    </tr>
+                                                </table>
+                                            </div>
+                                        </div>
+                
+                                        <hr style="margin: 1em 0;border-bottom: 1px solid #2f2f2f;" />
+                                        <div class="row">
+                                            <div class="col-md-12" style="text-align:center;">
+                                                <h4 style="margin-bottom:.5em;">Recent Token Activity (Last 5 days)</h4>
+                                            </div>
+                                        </div>
+                                        <div style="margin-top:5px;"></div>
+                                        <div class="table-responsive" style="position: relative;overflow: auto;max-height:25em;">
+                                            <table class="table table-dark">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Date</th>
+                                                        <th>Type</th>
+                                                        <th>Address</th>
+                                                        <th>Amount</th>
+                                                        <th>Tx</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <tr ng-repeat="e in recentActivity">
+                                                        <td>{{e.date | utcToLocal:'YYYY-MM-DD HH:mm'}}</td>
+                                                        <td>{{e.eventType}}</td>
+                                                        <td>
+                                                            <small>
+                                                                from: <a href="{{ethScanBaseUrl}}/address/{{e.from}}" target="_blank" title="{{e.from}}">{{e.from | smallAddress:10}}</a><br />
+                                                                to: <a href="{{ethScanBaseUrl}}/address/{{e.to}}" target="_blank" title="{{e.to}}">{{e.to | smallAddress:10}}</a>
+                                                            </small>
+                                                        </td>
+                                                        <td>{{e.amount}}</td>
+                                                        <td>
+                                                            <small>
+                                                                <a href="{{ethScanBaseUrl}}/tx/{{e.transactionHash}}" target="_blank" title="{{e.transactionHash}}">{{e.transactionHash | smallAddress:15}}</a>
+                                                            </small>
+                                                        </td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+        
+                                        <hr style="margin: 1em 0;border-bottom: 1px solid #2f2f2f;" />
+                                        <div class="row">
+                                            <div class="col-md-12" style="text-align:center;">
+                                                <h4 style="margin-bottom:.5em;">My Referrals</h4>
+                                            </div>
+                                        </div>
+                                        <div style="margin-top:5px;"></div>
+                                        <div class="table-responsive" style="position: relative;overflow: auto;max-height:25em;">
+                                            <table class="table table-dark">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Date</th>
+                                                        <th>Address</th>
+                                                        <th>Amount</th>
+                                                        <th>Tx</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <tr ng-repeat="e in myReferrals">
+                                                        <td>{{e.date | utcToLocal:'YYYY-MM-DD HH:mm'}}</td>
+                                                        <td>
+                                                            <a href="{{ethScanBaseUrl}}/address/{{e.to}}" target="_blank" title="{{e.to}}">{{e.to | smallAddress:10}}</a>
+                                                        </td>
+                                                        <td>{{e.amount}}</td>
+                                                        <td>
+                                                            <a href="{{ethScanBaseUrl}}/tx/{{e.transactionHash}}" target="_blank" title="{{e.transactionHash}}">{{e.transactionHash | smallAddress:10}}</a>
+                                                        </td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                
+                                        <hr style="margin: 1em 0;border-bottom: 1px solid #2f2f2f;" />
+                                        <div class="row">
+                                            <div class="col-md-12" style="text-align:center;">
+                                                <h4 style="margin-bottom:.5em;">Leaderboard</h4>
+                                            </div>
+                                        </div>
+                                        <div style="margin-top:5px;"></div>
+                                        <div class="table-responsive" style="position: relative;overflow: auto;max-height:25em;">
+                                            <table class="table table-dark">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Rank</th>
+                                                        <th>Address</th>
+                                                        <th>Tokens</th>
+                                                        <th>Unclaimed dividends</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <tr ng-repeat="a in leaderboardData">
+                                                        <td>{{a.rank}}</td>
+                                                        <td><a href="{{ethScanBaseUrl}}/address/{{a.address}}" target="_blank" title="{{a.address}}">{{a.address | smallAddress:10}}</a></td>
+                                                        <td>{{a.tokenBalance}}</td>
+                                                        <td>{{a.dividendBalance}}</td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
                                         </div>
                                     </div>
                                 </div>
-        
-                                <hr style="margin: 1em 0;border-bottom: 1px solid #2f2f2f;" />
-                                <div class="row">
-                                    <div class="col-md-12" style="text-align:center;">
-                                        <h4>Global</h4>
-                                    </div>
-                                </div>
-                                <div class="row" style="margin-top:5px;">
-                                    <div class="col-md-6" style="text-align:center;border-right: 1px solid #2f2f2f;">
-                                        <table class="table2" style="margin-left:auto;margin-right:auto;">
-                                            <tr>
-                                                <td>Price</td>
-                                                <td>{{currentPriceEth}} ETH</td>
-                                            </tr>
-                                            <tr>
-                                                <td>Pool Total</td>
-                                                <td>{{poolTotal.toFixed(8)}} ETH</td>
-                                            </tr>
-                                            <tr>
-                                                <td>Pool Floor</td>
-                                                <td>{{poolFloor}} ETH</td>
-                                            </tr>
-                                            <tr>
-                                                <td>Pool Ceiling</td>
-                                                <td>{{poolCeiling}} ETH</td>
-                                            </tr>
-                                            <tr>
-                                                <td>% to ceiling</td>
-                                                <td>{{pctToCeiling}}%</td>
-                                            </tr>
-                                        </table>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <table class="table2" style="margin-left:auto;margin-right:auto;">
-                                            <tr>
-                                                <td>Contract</td>
-                                                <td>
-                                                    <small>
-                                                        <a href="{{ethScanBaseUrl}}/address/{{contractAddress}}" target="_blank" title="{{contractAddress}}">{{contractAddress | smallAddress:10}}</a>
-                                                    </small>
-                                                </td>
-                                            </tr>
-                                            <tr>
-                                                <td>Total in contract</td>
-                                                <td>{{contractEthValue.toFixed(8)}} ETH</td>
-                                            </tr>
-                                            <tr>
-                                                <td>Total Dividends</td>
-                                                <td>{{totalDividends.toFixed(8)}} ETH</td>
-                                            </tr>
-                                            <tr>
-                                                <td>Buy Referrer %</td>
-                                                <td>{{buyReferrerPercent}}%</td>
-                                            </tr>
-                                            <tr>
-                                                <td>Buy Token Holder %</td>
-                                                <td>{{buyHolderPercent}}%</td>
-                                            </tr>
-                                            <tr>
-                                                <td>Sell Token Holder %</td>
-                                                <td>{{sellHolderPercent}}%</td>
-                                            </tr>
-                                        </table>
-                                    </div>
-                                </div>
-        
-                                <hr style="margin: 1em 0;border-bottom: 1px solid #2f2f2f;" />
-                                <div class="row">
-                                    <div class="col-md-12" style="text-align:center;">
-                                        <h4 style="margin-bottom:.5em;">Recent Token Activity (Last 5 days)</h4>
-                                    </div>
-                                </div>
-                                <div style="margin-top:5px;"></div>
-                                <div class="table-responsive" style="position: relative;overflow: auto;max-height:25em;">
-                                    <table class="table table-dark">
-                                        <thead>
-                                            <tr>
-                                                <th>Date</th>
-                                                <th>Type</th>
-                                                <th>Address</th>
-                                                <th>Amount</th>
-                                                <th>Tx</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <tr ng-repeat="e in recentActivity">
-                                                <td>{{e.date | utcToLocal:'YYYY-MM-DD HH:mm'}}</td>
-                                                <td>{{e.eventType}}</td>
-                                                <td>
-                                                    <small>
-                                                        from: <a href="{{ethScanBaseUrl}}/address/{{e.from}}" target="_blank" title="{{e.from}}">{{e.from | smallAddress:10}}</a><br />
-                                                        to: <a href="{{ethScanBaseUrl}}/address/{{e.to}}" target="_blank" title="{{e.to}}">{{e.to | smallAddress:10}}</a>
-                                                    </small>
-                                                </td>
-                                                <td>{{e.amount}}</td>
-                                                <td>
-                                                    <small>
-                                                        <a href="{{ethScanBaseUrl}}/tx/{{e.transactionHash}}" target="_blank" title="{{e.transactionHash}}">{{e.transactionHash | smallAddress:15}}</a>
-                                                    </small>
-                                                </td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
-                                </div>
-
-                                <hr style="margin: 1em 0;border-bottom: 1px solid #2f2f2f;" />
-                                <div class="row">
-                                    <div class="col-md-12" style="text-align:center;">
-                                        <h4 style="margin-bottom:.5em;">My Referrals</h4>
-                                    </div>
-                                </div>
-                                <div style="margin-top:5px;"></div>
-                                <div class="table-responsive" style="position: relative;overflow: auto;max-height:25em;">
-                                    <table class="table table-dark">
-                                        <thead>
-                                            <tr>
-                                                <th>Date</th>
-                                                <th>Address</th>
-                                                <th>Amount</th>
-                                                <th>Tx</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <tr ng-repeat="e in myReferrals">
-                                                <td>{{e.date | utcToLocal:'YYYY-MM-DD HH:mm'}}</td>
-                                                <td>
-                                                    <a href="{{ethScanBaseUrl}}/address/{{e.to}}" target="_blank" title="{{e.to}}">{{e.to | smallAddress:10}}</a>
-                                                </td>
-                                                <td>{{e.amount}}</td>
-                                                <td>
-                                                    <a href="{{ethScanBaseUrl}}/tx/{{e.transactionHash}}" target="_blank" title="{{e.transactionHash}}">{{e.transactionHash | smallAddress:10}}</a>
-                                                </td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
-                                </div>
-        
-                                <hr style="margin: 1em 0;border-bottom: 1px solid #2f2f2f;" />
-                                <div class="row">
-                                    <div class="col-md-12" style="text-align:center;">
-                                        <h4 style="margin-bottom:.5em;">Leaderboard</h4>
-                                    </div>
-                                </div>
-                                <div style="margin-top:5px;"></div>
-                                <div class="table-responsive" style="position: relative;overflow: auto;max-height:25em;">
-                                    <table class="table table-dark">
-                                        <thead>
-                                            <tr>
-                                                <th>Rank</th>
-                                                <th>Address</th>
-                                                <th>Tokens</th>
-                                                <th>Unclaimed dividends</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <tr ng-repeat="a in leaderboardData">
-                                                <td>{{a.rank}}</td>
-                                                <td><a href="{{ethScanBaseUrl}}/address/{{a.address}}" target="_blank" title="{{a.address}}">{{a.address | smallAddress:10}}</a></td>
-                                                <td>{{a.tokenBalance}}</td>
-                                                <td>{{a.dividendBalance}}</td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
+                            </div>
+                
+                            <div ng-show="currentNetwork && currentNetwork !== expectedNetwork">
+                                <div class="alert alert-danger">
+                                    <i class="fas fa-exclamation-triangle"></i> Expected: {{expectedNetworkName}}
                                 </div>
                             </div>
                         </div>
                     </div>
-        
-                    <div ng-show="currentNetwork && currentNetwork !== expectedNetwork">
-                        <div class="alert alert-danger">
-                            <i class="fas fa-exclamation-triangle"></i> Expected: {{expectedNetworkName}}
-                        </div>
+                    <div id="moreInfo" class="container tab-pane" style="background-color:#191919;">
+                        <div style="padding:1em;">
+                            <div ng-show="showInstallMetaMask" style="width:20em;">
+                                <a href="https://metamask.io/" target="_blank" border="0">
+                                    <img class="img-fluid" src="images/installMetaMask.png" alt="Install MetaMask" />
+                                </a>
+                            </div>
+                            <h3 style="margin-top:10px;">EvolV: The Next Stage in the Evolution of Cryptocurrency</h3>
+                            <div style="margin-top:10px;">
+                                <p>EvolV is a unique ERC-20 token and smart contract from the <a href="https://www.wolfpackbot.com" target="_blank">WolfpackBOT</a> cryptocurrency trading bot team. EvolV is equipped with a built-in decentralized exchange that handles buying and selling of the token.</p>
+                                <p>The EvolV Ecosystem includes built-in referral dividends and volume based staking dividends for all token holders, meaning that every time EvolV is bought or sold, all EvolV holders receive instant dividends, paid in <a href="https://ethereum.org" target="_blank">Ethereum</a>. This creates a potential source of ongoing dividend income based on the volume of the EvolV token, for as long as users buy or sell EvolV.</p>
+                                <p>Every time EvolV is purchased, all EvolV holders receive Ethereum dividends.</p>
+                                <p>Every time EvolV is sold, all EvolV holders receive an Ethereum dividends.</p>
+                                <p>Every time someone uses <i>your</i> unique referral link to purchase EvolV, you will receive a 5% referral bonus, <i>paid immediately</i> in Ethereum.</p>
+                                <p>The EvolV Ecosystem also includes use cases that give EvolV true utility.</p>
+                                <p><b>IMPORTANT NOTE</b>: In order to interact with the Smart Contract, you will need to install the <a href="https://metamask.io/" target="_blank">Metamask Extension</a> to your browser.</p>
+                                <p>
+                                    <b>EvolV / WolfpackBOT Official Links:</b><br />
+                                    <ul class="li-bullet" style="margin-left:25px;">
+                                        <li><a href="https://www.wolfpackbot.com/" target="_blank">Website</a></li>
+                                        <li><a href="http://blog.wolfpackbot.com/" target="_blank">Blog</a></li>
+                                        <li><a href="https://www.facebook.com/WolfpackBOT" target="_blank">Facebook</a></li>
+                                        <li><a href="https://www.youtube.com/channel/UCU37rF6MJ4fo0QFiqqGD9XQ" target="_blank">Youtube</a></li>
+                                        <li><a href="https://twitter.com/TheWolfpackBOT" target="_blank">Twitter</a></li>
+                                        <li><a href="https://www.instagram.com/wolfpackbot/" target="_blank">Instagram</a></li>
+                                        <li><a href="https://medium.com/@Wolfpackbot" target="_blank">Medium</a></li>
+                                        <li><a href="https://steemit.com/@wolfpack-bot" target="_blank">Steemit</a></li>
+                                        <li><a href="https://t.me/WolfpackBOT_Discussion" target="_blank">Telegram</a></li>
+                                        <li><a href="https://discord.gg/SVeRbFU" target="_blank">Discord</a></li>
+                                        <li><a href="https://bitcointalk.org/index.php?topic=5192209.new" target="_blank">Bitcoin Talk ANN</a></li>
+                                        <li><a href="https://wolfpackbotdownloads.azureedge.net/wolfpackbotdownloadscontainer/pdf/EvolV_WhitePaper_ANN.pdf?v=20191005" target="_blank">EvolV White Paper</a></li>
+                                        <li><a href="https://wolfpackbotdownloads.azureedge.net/wolfpackbotdownloadscontainer/pdf/whitepaper_en.pdf?v=20191021" target="_blank">WolfpackBOT White Paper</a></li>
+                                    </ul>
+                                </p>
+                                <p style="font-size:.8em;line-height:14pt;"><i>Legal Disclaimer: ALL cryptocurrency assets are inherently risky, and the EvolV / WolfpackBOT Team are not responsible for losses incurred as a result of buying the EvolV token. The EvolV / WolfpackBOT team makes no guarantees of profit as a result of trading the EvolV token, nor does the EvolV / WolfpackBOT team guarantee that the purchase of EvolV will result in receipt of Ethereum dividends, should their be a lack of EvolV Smart Contract volume. In order to sell EvolV, there must be enough Ethereum in the Ethereum pool in order to cover the amount of the sell, in addition to the amount of any unclaimed Ethereum dividends amongst all EvolV holders.</i></p>
+                            </div>
+                        </div>                        
                     </div>
                 </div>
             </div>
         </div>
     </div>
-
-    <div id="md-whatIsEvolV" class="modal theme-modal" tabindex="-1" role="dialog">
-            <div class="modal-dialog" role="document">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">What is EvolV?</h5>
-                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                            <span aria-hidden="true">&times;</span>
-                        </button>
-                    </div>
-                    <div class="modal-body" style="padding-top:10px;">
-                        <p>
-                            <a style="color: #007bff;" href="EvolV_WhitePaper_ANN.pdf" target="_blank"><i class="fa fa-download" style="color:#000;"></i>&nbsp;&nbsp; WhitePaper</span></a>
-                        </p>
-                        <p>EvolV is an ERC-20 token and smart contract equipped with a built-in decentralized exchange, which
-                                handles buying and selling of the token. The EvolV Ecosystem includes built-in referral dividends and
-                                volume based staking dividends for all token holders, along with use cases that give the EvolV token
-                                true utility.</p>
-                        <p>The EvolV Ecosystem is built around the concept of volume backed basic income, paid in Ethereum to
-                                all EvolV holders.</p>
-                        <p>It's a complex system, but it's all managed by an immutable smart contract.</p>
-                        <p>You will receive an immediate 5% Ethereum dividend anytime EvolV is purchased using your unique
-                                referral link.</p>
-                        <p>Every time EvolV is purchased, you receive an Ethereum dividend. </p>
-                        <p>Every time EvolV is sold, you receive an Ethereum dividend.</p>
-                        <p>Ethereum in, Ethereum out.  Easy as pie.</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js"></script>
@@ -671,7 +688,15 @@
     <script src="js/dependencies/polyfill.min.js"></script>
     <script src="js/dependencies/web3.min.js"></script>
     <script src="js/app.js?v=20191113_1026"></script>
-    <script src="js/tokenController.js?v=20191113_1132"></script>
+
+    <script>
+        $(".nav-tabs a").click(function(e){
+            e.preventDefault();
+            $(this).tab("show");
+        });
+    </script>
+
+    <script src="js/tokenController.js?v=20191204_0705"></script>
     <script src="js/tokenTransactionDialogController.js"></script>
 </body>
 </html>

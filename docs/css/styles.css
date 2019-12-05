@@ -182,7 +182,6 @@ hr {
 .mainPageTitleContainer {
     padding: 1em;
     width: 100%;
-    border-bottom: 1px solid #616161;
 }
 
     .mainPageTitleContainer h1 {
@@ -192,6 +191,26 @@ hr {
 
 .mainPageBody {
     padding: 1em;
+}
+
+.nav-tabs {
+    border-bottom: 1px solid #616161;
+}
+
+.nav-tabs .nav-item.show .nav-link, .nav-tabs .nav-link.active {
+    color: #f9b707;
+    background-color: #191919;
+    border-color: #a6a8ab;
+}
+
+.nav-tabs .nav-link {
+    border: 1px solid transparent;
+    border-top-left-radius: .25rem;
+    border-top-right-radius: .25rem;
+}
+
+.nav-tabs .nav-link:focus, .nav-tabs .nav-link:hover {
+    border-color: #a6a8ab;
 }
 
 @media only screen and (max-width: 375px) {
@@ -340,4 +359,20 @@ select.ng-valid, input.ng-valid {
 
 .form-control-sm {
     font-size: .700rem;
+}
+
+ol.li-numeric li {
+    list-style: decimal;
+}
+
+ol.li-alpha li {
+    list-style: lower-alpha;
+}
+
+ol.li-bullet li {
+    list-style: circle;
+}
+
+ul.li-bullet li {
+    list-style: disc;
 }
